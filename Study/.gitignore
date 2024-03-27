@@ -39,4 +39,4 @@ vignettes/*.pdf
 .Renviron
 
 Results*
-CodeToRun_Local.R
+CodeToRun_local.R
