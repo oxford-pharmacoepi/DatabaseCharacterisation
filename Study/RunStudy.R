@@ -12,8 +12,8 @@ cdm <- cdmFromCon(
   con = db,
   cdmSchema = cdmSchema, 
   writeSchema = writeSchema, 
-  cdmName = dbName, 
-  achillesSchema = achillesSchema
+  cdmName = dbName
+  # achillesSchema = achillesSchema
 )
 info(logger, "CDM OBJECT CREATED")
 
@@ -31,7 +31,8 @@ info(logger, "PHENOTYPER FINISHED")
 
 # run analyses ----
 info(logger, "RUN ANALYSES")
-source(here("Analyses", "1-ExampleAnalysis.R"))
+source(here("Analyses", "1-LargeScaleCharacteristics.R"))
+source(here("Analyses", "2-MonthlyCounts.R"))
 info(logger, "ANALYSES FINISHED")
 
 # export results ----
