@@ -220,9 +220,6 @@ summaryTable <- function(cdm, tab) {
     ) %>%
     collect()
 }
-
-
-
 summarisePersonDays  <- function(cdm,
                                  ageGroup = NULL,
                                  byYear = FALSE,
@@ -322,7 +319,6 @@ summarisePersonDays  <- function(cdm,
   
   return(result)
 }
-
 strataByYear <- function(cohort, bySex) {
   years <- cohort |>
     dplyr::summarise(
@@ -395,8 +391,6 @@ summaryFollowUp <- function(cohort, strata) {
   }
   return(res)
 }
-
-
 summarisePersonDays  <- function(cdm,
                                  ageGroup = NULL,
                                  byYear = FALSE,
@@ -495,7 +489,6 @@ summarisePersonDays  <- function(cdm,
   
   return(result)
 }
-
 strataByYear <- function(cohort, bySex) {
   years <- cohort |>
     dplyr::summarise(
@@ -566,5 +559,156 @@ summaryFollowUp <- function(cohort, strata) {
   } else {
     res <- dplyr::tibble()
   }
+  return(res)
+}
+summaryQuality <- function(table) {
+  name <- tableName(table)
+  if (name == "observation_period") {
+    start <- "observation_period_start_date"
+    concept <- NULL
+    type <- "period_type_concept_id"
+  } else if (name == "visit_occurrence") {
+    start <- "visit_start_date"
+    concept <- "visit_concept_id"
+    type <- "visit_type_concept_id"
+  } else if (name == "condition_occurrence") {
+    start <- "condition_start_date"
+    concept <- "condition_concept_id"
+    type <- "condition_type_concept_id"
+  } else if (name == "drug_exposure") {
+    start <- "drug_exposure_start_date"
+    concept <- "drug_concept_id"
+    type <- "drug_type_concept_id"
+  } else if (name == "procedure_occurrence") {
+    start <- "procedure_date"
+    concept <- "procedure_concept_id"
+    type <- "procedure_type_concept_id"
+  } else if (name == "device_exposure") {
+    start <- "device_exposure_start_date"
+    concept <- "device_concept_id"
+    type <- "device_type_concept_id"
+  } else if (name == "measurement") {
+    start <- "measurement_date"
+    concept <- "measurement_concept_id"
+    type <- "measurement_type_concept_id"
+  } else if (name == "observation") {
+    start <- "observation_date"
+    concept <- "observation_concept_id"
+    type <- "observation_type_concept_id"
+  } else if (name == "death") {
+    start <- "death_date"
+    concept <- "cause_concept_id"
+    type <- "death_type_concept_id"
+  }
+  records <- table |>
+    tally() |>
+    pull() |>
+    as.character()
+  recordName <- "records_per_person"
+  nIndividuals <- table |>
+    group_by(person_id) |>
+    tally(name = recordName) |>
+    right_join(cdm$person |> select("person_id"), by = "person_id") |>
+    mutate(!!recordName := if_else(is.na(.data[[recordName]]), 0, .data[[recordName]])) |>
+    collect() |>
+    mutate(!!recordName := as.integer(.data[[recordName]])) |>
+    summariseResult(
+      variables = recordName, 
+      estimates = c("mean", "sd", "median", "q25", "q75", "q05", "q95", "min", "max"),
+      verbose = F
+    ) |>
+    mutate(estimate_value = if_else(
+      gsub("_", " ", tolower(variable_name)) == "number records", 
+      records, 
+      estimate_value
+    ))
+  if (name == "observation_period") {
+    x <- table |> mutate(in_observation = 1)
+  } else {
+    x <- table |>
+      addInObservation(indexDate = start)
+  }
+  if (!is.null(concept)) {
+    x <- x |>
+      mutate(mapped = if_else(.data[[concept]] == 0, "No", "Yes")) |>
+      left_join(
+        cdm$concept |>
+          select("domain_id", !!concept := "concept_id"),
+        by = concept
+      )
+  } else {
+    x <- x |>
+      mutate(mapped = "Yes", domain_id = "No domain")
+  }
+  x <- x |>
+    left_join(
+      cdm$concept |>
+        select("type_name" = "concept_name", !!type := "concept_id"),
+      by = type
+    ) |>
+    group_by(in_observation, mapped, domain_id, type_name) |>
+    tally() |>
+    collect()
+  res <- nIndividuals |>
+    select(variable_name, variable_level, estimate_name, estimate_type, estimate_value) |>
+    union_all(
+      x |>
+        group_by(in_observation) |>
+        summarise(estimate_value = sum(n)) |>
+        mutate(
+          variable_name = "In observation",
+          variable_level = if_else(in_observation == 1, "Yes", "No")
+        ) |>
+        select(variable_name, variable_level, estimate_value) |>
+        union_all(
+          x |>
+            group_by(mapped) |>
+            summarise(estimate_value = sum(n)) |>
+            mutate(
+              variable_name = "Mapped",
+              variable_level = mapped
+            ) |>
+            select(variable_name, variable_level, estimate_value)
+        ) |>
+        union_all(
+          x |>
+            group_by(domain_id) |>
+            summarise(estimate_value = sum(n)) |>
+            mutate(
+              variable_name = "Domain",
+              variable_level = domain_id
+            ) |>
+            select(variable_name, variable_level, estimate_value)
+        ) |>
+        union_all(
+          x |>
+            group_by(type_name) |>
+            summarise(estimate_value = sum(n)) |>
+            mutate(
+              variable_name = "Record type",
+              variable_level = type_name
+            ) |>
+            select(variable_name, variable_level, estimate_value)
+        ) |>
+        mutate(
+          estimate_value = as.character(estimate_value),
+          estimate_name = "count", 
+          estimate_type = "integer"
+        )
+    ) |>
+    mutate(
+      result_id = as.integer(1),
+      cdm_name = cdmName(cdmReference(table)),
+      result_type = "summarised_omop_table", 
+      package_name = "omopSketch",
+      package_version = "0.0.0",
+      group_name = "omop_table",
+      group_level = name,
+      strata_name = "overall",
+      strata_level = "overall",
+      additional_name = "overall", 
+      additional_level = "overall"
+    ) |>
+    newSummarisedResult()
   return(res)
 }

@@ -1,5 +1,8 @@
 # create logger ----
-resultsFolder <- here("Results")
+resultsFolder <- here("Results", dbName)
+if (!dir.exists(resultsFolder)) {
+  dir.create(resultsFolder, recursive = T)
+}
 loggerName <- gsub(":| |-", "_", paste0("log ", Sys.time(),".txt"))
 logger <- create.logger()
 logfile(logger) <- here(resultsFolder, loggerName)
@@ -12,27 +15,28 @@ cdm <- cdmFromCon(
   con = db,
   cdmSchema = cdmSchema, 
   writeSchema = writeSchema, 
-  cdmName = dbName
-  # achillesSchema = achillesSchema
+  cdmName = dbName,
+  achillesSchema = achillesSchema
 )
 info(logger, "CDM OBJECT CREATED")
 
 # create and export snapshot
+info(logger, "EXPORT SNAPSHOT")
+summary(cdm) |>
+  suppress(minCellCount = minCellCount) |>
+  write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_snapshot.csv")))
+info(logger, "SNAPHSOT EXPORTED")
 
-# instantiate necessary cohorts ----
-info(logger, "INSTANTIATING STUDY COHORTS")
-source(here("Cohorts", "InstantiateCohorts.R"))
-info(logger, "STUDY COHORTS INSTANTIATED")
-
-# run diagnostics ----
-info(logger, "RUN PHENOTYPER")
-source(here("PhenotypeR", "PhenotypeR.R"))
-info(logger, "PHENOTYPER FINISHED")
+# source functions
+source(here("Analyses", "functions.R"))
 
 # run analyses ----
 info(logger, "RUN ANALYSES")
+info(logger, "SNAPHSOT EXPORTED")
+source(here("Analyses", "1-SummariseClinicalTables.R"))
+
 source(here("Analyses", "1-LargeScaleCharacteristics.R"))
-source(here("Analyses", "2-MonthlyCounts.R"))
+
 info(logger, "ANALYSES FINISHED")
 
 # export results ----

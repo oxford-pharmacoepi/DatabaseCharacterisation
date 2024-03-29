@@ -16,8 +16,10 @@ lsc <- cdm$den %>%
     strata = list("sex", "age_group", c("sex", "age_group")),
     window = list(c(0, Inf)),
     censorDate = "cohort_end_date",
-    eventInWindow = c("condition_occurrence", "observation", "measurement", "procedure_occurrence", "device_exposure"),
-    episodeInWindow = c("drug_exposure"),
+    eventInWindow = c(
+      "condition_occurrence", "observation", "measurement", 
+      "procedure_occurrence", "device_exposure", "drug_exposure"
+    ),
     minimumFrequency = 0.005
   )
 
