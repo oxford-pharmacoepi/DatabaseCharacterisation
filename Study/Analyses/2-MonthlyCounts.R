@@ -19,14 +19,14 @@ for (tab in c(
   "observation_period", "drug_exposure", "condition_occurrence",
   "device_exposure"
 )) {
-  info(logger, paste0('ongoing ', tab))
-  x[[tab]] <- monthlyOngoing(cdm, tab)
+  info(logger, paste0('overlap ', tab))
+  x[[tab]] <- monthlyoverlap(cdm, tab)
 }
 x %>%
   bind_rows(.id = "table") %>%
   mutate(cdm_name = cdmName(cdm)) %>%
   write.csv(
-    file = here("Results", paste0(cdmName(cdm), "_ongoing_counts.csv")),
+    file = here("Results", paste0(cdmName(cdm), "_overlap_counts.csv")),
     row.names = FALSE
   )
 

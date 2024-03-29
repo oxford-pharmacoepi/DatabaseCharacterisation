@@ -1,3 +1,6 @@
+# study parameters ----
+ageGroups <- list(c(0, 19), c(20, 39), c(40, 59), c(60, 79), c(80, Inf))
+
 # create logger ----
 resultsFolder <- here("Results", dbName)
 if (!dir.exists(resultsFolder)) {
@@ -32,7 +35,6 @@ source(here("Analyses", "functions.R"))
 
 # run analyses ----
 info(logger, "RUN ANALYSES")
-info(logger, "SNAPHSOT EXPORTED")
 source(here("Analyses", "1-SummariseClinicalTables.R"))
 
 source(here("Analyses", "1-LargeScaleCharacteristics.R"))

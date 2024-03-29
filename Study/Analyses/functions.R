@@ -88,101 +88,6 @@ generateAgeCohortSet <- function(cdm,
 
   return(cdm)
 }
-monthlyIncident <- function(cdm, tab) {
-  date <- switch(
-    tab,
-    "observation_period" = "observation_period_start_date",
-    "drug_exposure" = "drug_exposure_start_date",
-    "condition_occurrence" = "condition_start_date",
-    "observation" = "observation_date",
-    "measurement" = "measurement_date",
-    "procedure_occurrence" = "procedure_date",
-    "device_exposure" = "device_exposure_start_date",
-  )
-  if (tab != "observation_period") {
-    x <- cdm[[tab]] %>%
-      addInObservation(indexDate = date) %>%
-      filter(in_observation == 1)
-  } else {
-    x <- cdm[[tab]]
-  }
-  x <- x %>%
-    rename("incidence_date" = all_of(date)) %>%
-    mutate(
-      "incidence_month" = !!datepart("incidence_date", "month"),
-      "incidence_year" = !!datepart("incidence_date", "year")
-    ) %>%
-    group_by(incidence_month, incidence_year) %>%
-    summarise(n = as.numeric(n()), .groups = "drop") %>%
-    collect()
-  x <- x %>%
-    union_all(
-      x %>%
-        group_by(incidence_year) %>%
-        summarise(n = sum(n), .groups = "drop") %>%
-        mutate(incidence_month = as.numeric(NA))
-    ) %>%
-    mutate(n = if_else(n < 5, as.numeric(NA), .data$n))
-  return(x)
-}
-monthlyOngoing <- function(cdm, tab) {
-  dateS <- switch(
-    tab,
-    "observation_period" = "observation_period_start_date",
-    "drug_exposure" = "drug_exposure_start_date",
-    "condition_occurrence" = "condition_start_date",
-    "device_exposure" = "device_exposure_start_date",
-  )
-  dateE <- switch(
-    tab,
-    "observation_period" = "observation_period_end_date",
-    "drug_exposure" = "drug_exposure_end_date",
-    "condition_occurrence" = "condition_end_date",
-    "device_exposure" = "device_exposure_end_date",
-  )
-  if (tab != "observation_period") {
-    x <- cdm[[tab]] %>%
-      addInObservation(indexDate = dateS) %>%
-      filter(in_observation == 1)
-  } else {
-    x <- cdm[[tab]]
-  }
-  x <- x %>%
-    select("start_date" = all_of(dateS), "end_date" = all_of(dateE)) %>%
-    filter(!is.na(end_date)) %>%
-    mutate(
-      "start_date_month" = as.numeric(!!datepart("start_date", "month")),
-      "start_date_year" = as.numeric(!!datepart("start_date", "year")),
-      "end_date_month" = as.numeric(!!datepart("end_date", "month")),
-      "end_date_year" = as.numeric(!!datepart("end_date", "year"))
-    ) %>%
-    group_by(start_date_month, start_date_year, end_date_month, end_date_year) %>%
-    summarise(n = as.numeric(n()), .groups = "drop") %>%
-    compute()
-  time <- expand.grid(
-    ongoing_month = 1:12,
-    ongoing_year = seq(
-      x %>% pull("start_date_year") %>% min(),
-      x %>% pull("end_date_year") %>% max()
-    ),
-    id = 1
-  ) %>%
-    mutate(ongoing_date = as.Date(paste0(ongoing_year, "/", ongoing_month, "/01"))) %>%
-    select(-ongoing_month, -ongoing_year)
-  x <- x %>%
-    mutate(id = 1) %>%
-    inner_join(time, copy = TRUE, by = "id", relationship = "many-to-many") %>%
-    mutate(
-      start_date = as.Date(paste0(start_date_year, "/", start_date_month, "/01")),
-      end_date = as.Date(paste0(end_date_year, "/", end_date_month, "/01"))
-    ) %>%
-    filter(ongoing_date >= start_date & ongoing_date <= end_date) %>%
-    group_by(ongoing_date) %>%
-    summarise(n = sum(.data$n), .groups = "drop") %>%
-    collect() %>%
-    mutate(n = if_else(n < 5, as.numeric(NA), .data$n))
-  return(x)
-}
 summaryTable <- function(cdm, tab) {
   concept <- switch(
     tab,
@@ -561,45 +466,12 @@ summaryFollowUp <- function(cohort, strata) {
   }
   return(res)
 }
+
 summaryQuality <- function(table) {
   name <- tableName(table)
-  if (name == "observation_period") {
-    start <- "observation_period_start_date"
-    concept <- NULL
-    type <- "period_type_concept_id"
-  } else if (name == "visit_occurrence") {
-    start <- "visit_start_date"
-    concept <- "visit_concept_id"
-    type <- "visit_type_concept_id"
-  } else if (name == "condition_occurrence") {
-    start <- "condition_start_date"
-    concept <- "condition_concept_id"
-    type <- "condition_type_concept_id"
-  } else if (name == "drug_exposure") {
-    start <- "drug_exposure_start_date"
-    concept <- "drug_concept_id"
-    type <- "drug_type_concept_id"
-  } else if (name == "procedure_occurrence") {
-    start <- "procedure_date"
-    concept <- "procedure_concept_id"
-    type <- "procedure_type_concept_id"
-  } else if (name == "device_exposure") {
-    start <- "device_exposure_start_date"
-    concept <- "device_concept_id"
-    type <- "device_type_concept_id"
-  } else if (name == "measurement") {
-    start <- "measurement_date"
-    concept <- "measurement_concept_id"
-    type <- "measurement_type_concept_id"
-  } else if (name == "observation") {
-    start <- "observation_date"
-    concept <- "observation_concept_id"
-    type <- "observation_type_concept_id"
-  } else if (name == "death") {
-    start <- "death_date"
-    concept <- "cause_concept_id"
-    type <- "death_type_concept_id"
-  }
+  concept <- standardConcept(name)
+  type <- typeConcept(name)
+  start <- startDate(name)
   records <- table |>
     tally() |>
     pull() |>
@@ -710,5 +582,509 @@ summaryQuality <- function(table) {
       additional_level = "overall"
     ) |>
     newSummarisedResult()
+  return(res)
+}
+startDate <- function(name) {
+  switch(
+    name,
+    "observation_period" = "observation_period_start_date",
+    "visit_occurrence" = "visit_start_date",
+    "condition_occurrence" = "condition_start_date",
+    "drug_exposure" = "drug_exposure_start_date",
+    "procedure_occurrence" = "procedure_date",
+    "device_exposure" = "device_exposure_start_date",
+    "measurement" = "measurement_date",
+    "observation" = "observation_date",
+    "death" = "death_date"
+  )
+}
+endDate <- function(name) {
+  switch(
+    name,
+    "observation_period" = "observation_period_end_date",
+    "visit_occurrence" = "visit_end_date",
+    "condition_occurrence" = "condition_end_date",
+    "drug_exposure" = "drug_exposure_end_date",
+    "procedure_occurrence" = "procedure_date",
+    "device_exposure" = "device_exposure_end_date",
+    "measurement" = "measurement_date",
+    "observation" = "observation_date",
+    "death" = "death_date"
+  )
+}
+standardConcept <- function(name) {
+  switch(
+    name,
+    "observation_period" = NULL,
+    "visit_occurrence" = "visit_concept_id",
+    "condition_occurrence" = "condition_concept_id",
+    "drug_exposure" = "drug_concept_id",
+    "procedure_occurrence" = "procedure_concept_id",
+    "device_exposure" = "device_concept_id",
+    "measurement" = "measurement_concept_id",
+    "observation" = "observation_concept_id",
+    "death" = "cause_concept_id"
+  )
+}
+typeConcept <- function(name) {
+  switch(
+    name,
+    "observation_period" = "period_type_concept_id",
+    "visit_occurrence" = "visit_type_concept_id",
+    "condition_occurrence" = "condition_type_concept_id",
+    "drug_exposure" = "drug_type_concept_id",
+    "procedure_occurrence" = "procedure_type_concept_id",
+    "device_exposure" = "device_type_concept_id",
+    "measurement" = "measurement_type_concept_id",
+    "observation" = "observation_type_concept_id",
+    "death" = "death_type_concept_id"
+  )
+}
+incidenceCounts <- function(table) {
+  name <- omopgenerics::tableName(table)
+  date <- startDate(name)
+  tablePrefix <- omopgenerics::tmpPrefix()
+  table <- table |>
+    dplyr::select(dplyr::all_of(date), "person_id")
+  if (name != "observation_period") {
+    table <- table |>
+      PatientProfiles::addInObservation(
+        indexDate = date, nameStyle = "in_observation"
+      ) |>
+      dplyr::filter(.data$in_observation == 1)
+  }
+  table <- table |>
+    rename("incidence_date" = all_of(date)) %>%
+    mutate(
+      "incidence_month" = !!datepart("incidence_date", "month"),
+      "incidence_year" = !!datepart("incidence_date", "year")
+    ) |>
+    dplyr::compute(
+      name = omopgenerics::uniqueTableName(prefix = tablePrefix),
+      temporary = FALSE
+    )
+  x <- table |>
+    group_by(incidence_month, incidence_year) %>%
+    summarise(
+      "incident_records" = dplyr::n(),
+      "incident_subjects" = dplyr::n_distinct(.data$person_id),
+      .groups = "drop"
+    ) |>
+    collect()
+  x <- x |>
+    tidyr::pivot_longer(
+      cols = c("incident_records", "incident_subjects"),
+      names_to = "variable_name",
+      values_to = "estimate_value"
+    ) |>
+    dplyr::mutate(
+      "strata_level" = paste0(
+        as.character(.data$incidence_year), 
+        "-",
+        stringr::str_pad(.data$incidence_month, width = 2, pad = "0")
+      ),
+      "strata_name" = "year_month"
+    ) |>
+    dplyr::select(dplyr::starts_with("strata"), "variable_name", "estimate_value") |>
+    dplyr::union_all(
+      x |>
+        dplyr::group_by(.data$incidence_year) |>
+        dplyr::summarise("incident_records" = sum(.data$incident_records)) |>
+        tidyr::pivot_longer(
+          cols = c("incident_records"),
+          names_to = "variable_name",
+          values_to = "estimate_value"
+        ) |>
+        dplyr::rename("year" = "incidence_year") |>
+        visOmopResults::uniteStrata(cols = "year")
+    ) |>
+    dplyr::union_all(
+      table |>
+        group_by(incidence_year) %>%
+        summarise("incident_subjects" = dplyr::n_distinct(.data$person_id)) |>
+        collect() |>
+        tidyr::pivot_longer(
+          cols = c("incident_subjects"),
+          names_to = "variable_name",
+          values_to = "estimate_value"
+        ) |>
+        dplyr::rename("year" = "incidence_year") |>
+        visOmopResults::uniteStrata(cols = "year")
+    ) |>
+    dplyr::mutate(
+      "result_id" = as.integer(1),
+      "cdm_name" = omopgenerics::cdmName(omopgenerics::cdmReference(table)),
+      "result_type" = "summarised_incident_counts",
+      "package_name" = "omopSketch",
+      "package_version" = "0.0.0",
+      "group_name" = "omop_table",
+      "group_level" = name,
+      "estimate_value" = as.character(.data$estimate_value),
+      "variable_level" = NA_character_,
+      "estimate_name" = "count",
+      "estimate_type" = "integer",
+      "additional_name" = "overall",
+      "additional_level" = "overall"
+    ) |>
+    omopgenerics::newSummarisedResult()
+  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with(tablePrefix))
+  return(x)
+}
+summariseIncidentCounts <- function(table, denominator) {
+  if (table |> dplyr::tally() |> dplyr::pull() == 0) {
+    return(omopgenerics::emptySummarisedResult())
+  }
+  incidenceCounts(table) |>
+    dplyr::inner_join(
+      denominator |>
+        dplyr::select(
+          "strata_name", "strata_level", "variable_name", 
+          "percentage" = "estimate_value"
+        ) |>
+        dplyr::mutate("variable_name" = gsub(
+          "overlap", "incident", .data$variable_name
+        )),
+      by = c("strata_name", "strata_level", "variable_name")
+    ) |>
+    dplyr::mutate("percentage" = as.character(
+      100 * as.numeric(.data$estimate_value) / as.numeric(.data$percentage)
+    )) |>
+    dplyr::rename("count" = "estimate_value") |>
+    dplyr::select(-c("estimate_name")) |>
+    tidyr::pivot_longer(
+      cols = c("count", "percentage"), 
+      names_to = "estimate_name", 
+      values_to = "estimate_value"
+    ) |>
+    dplyr::mutate(
+      "estimate_type" = dplyr::case_when(
+        .data$estimate_name == "count" ~ "integer", 
+        .data$variable_name == "incident_records" ~ "numeric",
+        .data$variable_name == "incident_subjects" ~ "percentage"
+      ),
+      "estimate_name" = dplyr::case_when(
+        .data$estimate_name == "count" ~ "count", 
+        .data$variable_name == "incident_records" ~ "mean",
+        .data$variable_name == "incident_subjects" ~ "percentage"
+      ),
+      "estimate_value" = dplyr::if_else(
+        .data$estimate_name == "mean", 
+        as.character(as.numeric(.data$estimate_value)/100),
+        .data$estimate_value
+      )
+    ) |>
+    omopgenerics::newSummarisedResult()
+}
+summariseOverlapCounts <- function(table, denominator) {
+  if (table |> dplyr::tally() |> dplyr::pull() == 0) {
+    return(omopgenerics::emptySummarisedResult())
+  }
+  overlapCounts(table) |>
+    dplyr::inner_join(
+      denominator |>
+        dplyr::select(
+          "strata_name", "strata_level", "variable_name", 
+          "percentage" = "estimate_value"
+        ),
+      by = c("strata_name", "strata_level", "variable_name")
+    ) |>
+    dplyr::mutate("percentage" = as.character(
+      100 * as.numeric(.data$estimate_value) / as.numeric(.data$percentage)
+    )) |>
+    dplyr::rename("count" = "estimate_value") |>
+    dplyr::select(-c("estimate_name")) |>
+    tidyr::pivot_longer(
+      cols = c("count", "percentage"), 
+      names_to = "estimate_name", 
+      values_to = "estimate_value"
+    ) |>
+    dplyr::mutate(
+      "estimate_type" = dplyr::case_when(
+        .data$estimate_name == "count" ~ "integer", 
+        .data$variable_name == "overlap_records" ~ "numeric",
+        .data$variable_name == "overlap_subjects" ~ "percentage"
+      ),
+      "estimate_name" = dplyr::case_when(
+        .data$estimate_name == "count" ~ "count", 
+        .data$variable_name == "overlap_records" ~ "mean",
+        .data$variable_name == "overlap_subjects" ~ "percentage"
+      ),
+      "estimate_value" = dplyr::if_else(
+        .data$estimate_name == "mean", 
+        as.character(as.numeric(.data$estimate_value)/100),
+        .data$estimate_value
+      )
+    ) |>
+    omopgenerics::newSummarisedResult()
+}
+overlapCounts <- function(table) {
+  tablePrefix <- omopgenerics::tmpPrefix()
+  name <- omopgenerics::tableName(table)
+  start_date <- startDate(name)
+  end_date <- endDate(name)
+  table <- table |>
+    dplyr::select(dplyr::all_of(c(start_date, end_date)), "person_id") |>
+    dplyr::filter(!is.na(.data[[end_date]])) |>
+    dplyr::inner_join(
+      cdm$observation_period |>
+        dplyr::select(
+          "person_id", 
+          "start_obs" = "observation_period_start_date",
+          "end_obs" = "observation_period_end_date"
+        ),
+      by = "person_id"
+    ) |>
+    dplyr::mutate(
+      "start_date" = dplyr::if_else(
+        .data[[start_date]] <= .data$start_obs, 
+        .data$start_obs, 
+        .data[[start_date]]
+      ),
+      "end_date" = dplyr::if_else(
+        .data[[end_date]] >= .data$end_obs, 
+        .data$end_obs, 
+        .data[[end_date]]
+      )
+    ) |>
+    dplyr::filter(.data$start_date <= .data$end_date) |>
+    dplyr::compute(
+      name = omopgenerics::uniqueTableName(tablePrefix), temporary = FALSE
+    )
+  minYear <- table |>
+    dplyr::summarise(x = min(.data[[start_date]], na.rm = TRUE)) |>
+    dplyr::pull() |>
+    format("%Y") |>
+    as.numeric()
+  overlapRecordsMonth <- table %>%
+    mutate(
+      "start" = !!datepart(start_date, "month") + 12 * (
+        !!datepart(start_date, "year") - .env$minYear
+      ),
+      "end" = !!datepart(end_date, "month") + 12 * (
+        !!datepart(end_date, "year") - .env$minYear
+      )
+    ) |>
+    countRecords() |>
+    dplyr::mutate(
+      "year_month" = paste0(
+        as.character(ceiling(.data$group/12) - 1 + .env$minYear),
+        "-",
+        stringr::str_pad(
+          dplyr::if_else(.data$group %% 12 == 0, 12, .data$group %% 12), 
+          width = 2, 
+          pad = "0"
+        )
+      ),
+      "overlap_records" = .data$n
+    ) |>
+    dplyr::select(-c("n", "group"))
+  overlapRecordsYear <- table %>%
+    mutate(
+      "start" = !!datepart(start_date, "year"),
+      "end" = !!datepart(end_date, "year")
+    ) |>
+    countRecords() |>
+    dplyr::rename("year" = "group", "overlap_records" = "n")
+  overlapSubjectsMonth <- table %>%
+    mutate(
+      "start" = !!datepart(start_date, "month") + 12 * (
+        !!datepart(start_date, "year") - .env$minYear
+      ),
+      "end" = !!datepart(end_date, "month") + 12 * (
+        !!datepart(end_date, "year") - .env$minYear
+      )
+    ) |>
+    solveOverlap() |>
+    countRecords() |>
+    dplyr::mutate(
+      "year_month" = paste0(
+        as.character(ceiling(.data$group/12) - 1 + .env$minYear),
+        "-",
+        stringr::str_pad(
+          dplyr::if_else(.data$group %% 12 == 0, 12, .data$group %% 12), 
+          width = 2, 
+          pad = "0"
+        )
+      ), 
+      "overlap_subjects" = .data$n
+    ) |>
+    dplyr::select(-c("n", "group"))
+  overlapSubjectsYear <- table %>%
+    mutate(
+      "start" = !!datepart(start_date, "year"),
+      "end" = !!datepart(end_date, "year")
+    ) |>
+    solveOverlap() |>
+    countRecords() |>
+    dplyr::rename("year" = "group", "overlap_subjects" = "n")
+  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with(tablePrefix))
+  
+  x <- overlapRecordsMonth |>
+    tidyr::pivot_longer(
+      cols = "overlap_records",
+      names_to = "variable_name", 
+      values_to = "estimate_value"
+    ) |>
+    dplyr::union_all(
+      overlapSubjectsMonth |>
+        tidyr::pivot_longer(
+          cols = "overlap_subjects",
+          names_to = "variable_name", 
+          values_to = "estimate_value"
+        )
+    ) |>
+    visOmopResults::uniteStrata("year_month") |>
+    dplyr::union_all(
+      overlapRecordsYear |>
+        tidyr::pivot_longer(
+          cols = "overlap_records",
+          names_to = "variable_name", 
+          values_to = "estimate_value"
+        ) |>
+        dplyr::union_all(
+          overlapSubjectsYear |>
+            tidyr::pivot_longer(
+              cols = "overlap_subjects",
+              names_to = "variable_name", 
+              values_to = "estimate_value"
+            )
+        ) |>
+        visOmopResults::uniteStrata("year")
+    ) |>
+    dplyr::mutate(
+      "result_id" = as.integer(1),
+      "cdm_name" = omopgenerics::cdmName(omopgenerics::cdmReference(table)),
+      "result_type" = "summarised_overlap_counts",
+      "package_name" = "omopSketch",
+      "package_version" = "0.0.0",
+      "group_name" = "omop_table",
+      "group_level" = name,
+      "estimate_value" = as.character(.data$estimate_value),
+      "variable_level" = NA_character_,
+      "estimate_name" = "count",
+      "estimate_type" = "integer",
+      "additional_name" = "overall",
+      "additional_level" = "overall"
+    ) |>
+    omopgenerics::newSummarisedResult()
+  
+  return(x)
+}
+countRecords <- function(x) {
+  tablePrefix <- omopgenerics::tmpPrefix()
+  x <- x |>
+    dplyr::group_by(.data$start, .data$end) %>%
+    dplyr::summarise(n = dplyr::n(), .groups = "drop") %>%
+    dplyr::mutate(dplyr::across(dplyr::everything(), as.integer)) |>
+    dplyr::compute(
+      name = omopgenerics::uniqueTableName(tablePrefix), temporary = FALSE
+    )
+  nm <- omopgenerics::uniqueTableName(tablePrefix)
+  cdm <- omopgenerics::insertTable(
+    cdm = cdm, 
+    name = nm, 
+    table = dplyr::tibble("group" = seq(
+      x |> 
+        dplyr::summarise(x = min(.data$start, na.rm = TRUE)) |> 
+        dplyr::pull(),
+      x |> 
+        dplyr::summarise(x = max(.data$end, na.rm = TRUE)) |> 
+        dplyr::pull()
+    ))
+  )
+  x <- x |>
+    dplyr::cross_join(cdm[[nm]]) |>
+    dplyr::filter(.data$start <= .data$group & .data$end >= .data$group) |>
+    dplyr::group_by(.data$group) |>
+    dplyr::summarise(n = sum(.data$n, na.rm = TRUE)) %>%
+    dplyr::collect()
+  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with(tablePrefix))
+  return(x)
+}
+solveOverlap <- function(x) {
+  x |> 
+    dplyr::select("person_id", "date" = "start") |>
+    dplyr::mutate("id" = -1) |>
+    dplyr::union_all(
+      x |> 
+        dplyr::select("person_id", "date" = "end") |>
+        dplyr::mutate("id" = 1)
+    ) |>
+    dplyr::group_by(.data$person_id) |>
+    dplyr::arrange(.data$date, .data$id) |>
+    dplyr::mutate(
+      "cum_id" = cumsum(.data$id),
+      "idd" = cumsum(as.numeric(.data$cum_id == -1 & .data$id == -1))
+    ) |>
+    dplyr::arrange() |>
+    dplyr::ungroup() |>
+    dplyr::mutate("colname" = dplyr::case_when(
+      .data$id == -1 & .data$cum_id == -1 ~ "start",
+      .data$id == 1 & .data$cum_id == 0 ~ "end"
+    )) |>
+    dplyr::filter(!is.na(colname)) |>
+    dplyr::select(-c("id", "cum_id")) |>
+    tidyr::pivot_wider(names_from = "colname", values_from = "date") |>
+    dplyr::select(-"idd")
+}
+summaryCodeCounts <- function(table, ageGroups) {
+  if (table |> dplyr::tally() |> dplyr::pull() == 0) {
+    return(omopgenerics::emptySummarisedResult())
+  }
+  name <- omopgenerics::tableName(table)
+  x <- table |>
+    PatientProfiles::addDemographics(
+      indexDate = startDate(name), 
+      ageGroup = ageGroups, 
+      futureObservation = FALSE
+    ) |>
+    dplyr::filter(!is.na(.data$prior_observation)) |>
+    dplyr::rename("concept_id" = !!standardConcept(name)) %>%
+    dplyr::mutate("year" = !!datepart(date = startDate(name), interval = "year")) |>
+    dplyr::group_by(.data$concept_id, .data$age_group, .data$sex, .data$year) |>
+    dplyr::tally() |>
+    dplyr::collect()
+  strata <- list(
+    character(),
+    "sex",
+    "age_group",
+    "year",
+    c("sex", "age_group"),
+    c("sex", "year"),
+    c("age_group", "year"),
+    c("sex", "age_group", "year")
+  )
+  res <- list()
+  for (k in seq_along(strata)) {
+    res[[k]] <- x |>
+      dplyr::group_by(dplyr::across(c("concept_id", strata[[k]]))) |>
+      dplyr::summarise("estimate_value" = sum(.data$n), .groups = "drop") |>
+      visOmopResults::uniteStrata(cols = strata[[k]])
+  }
+  res <- res |>
+    dplyr::bind_rows() |>
+    left_join(
+      cdm$concept |> 
+        dplyr::select("concept_id", "variable_name" = "concept_name") |> 
+        dplyr::collect(), 
+      by = "concept_id"
+    ) |>
+    dplyr::rename("variable_level" = "concept_id") |>
+    dplyr::mutate(
+      "result_id" = as.integer(1),
+      "cdm_name" = omopgenerics::cdmName(omopgenerics::cdmReference(table)),
+      "result_type" = "summarised_code_counts",
+      "package_name" = "omopSketch",
+      "package_version" = "0.0.0",
+      "group_name" = "omop_table",
+      "group_level" = name,
+      "variable_level" = as.character(.data$variable_level),
+      "estimate_value" = as.character(.data$estimate_value),
+      "estimate_name" = "count",
+      "estimate_type" = "integer",
+      "additional_name" = "overall",
+      "additional_level" = "overall"
+    ) |>
+    omopgenerics::newSummarisedResult()
   return(res)
 }
