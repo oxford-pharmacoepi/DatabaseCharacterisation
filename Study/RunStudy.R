@@ -34,16 +34,23 @@ info(logger, "SNAPHSOT EXPORTED")
 source(here("Analyses", "functions.R"))
 
 # run analyses ----
-info(logger, "RUN ANALYSES")
+info(logger, "1 - SUMMARISE CLINICAL TABLES")
 source(here("Analyses", "1-SummariseClinicalTables.R"))
+info(logger, "1 - CLINICAL TABLES SUMMARISED")
 
-source(here("Analyses", "1-LargeScaleCharacteristics.R"))
+info(logger, "2 - CHARACTERISE INDIVIDUALS AT INDEX DATE")
+source(here("Analyses", "2-CharacterisationAtIndex.R"))
+info(logger, "2 - INDIVIDUALS AT INDEX DATE CHARACTERISED")
+
+info(logger, "3 - SUMMARISE INDIVIDUALS FOLLOWUP")
+source(here("Analyses", "3-SummariseFollowup.R"))
+info(logger, "3 - INDIVIDUALS FOLLOWUP SUMMARISED")
 
 info(logger, "ANALYSES FINISHED")
 
 # export results ----
 info(logger, "EXPORTING RESULTS")
 zip(
-  zipfile = file.path(paste0(resultsFolder, "/Results_", cdmName(cdm), ".zip")),
+  zipfile = file.path(paste0(resultsFolder, "/", cdmName(cdm), ".zip")),
   files = list.files(resultsFolder, full.names = TRUE)
 )
