@@ -4,6 +4,7 @@ library(omopgenerics)
 library(readr)
 library(dplyr)
 library(tidyr)
+library(visOmopResults)
 
 x <- list.files(here("data"))
 y <- x[tools::file_ext(x) == "zip"]
@@ -33,4 +34,9 @@ snapshot <- results |>
   filter(result_type == "cdm_snapshot") |>
   select(cdm_name, variable_name, estimate_name, estimate_value)
 
-save(snapshot, file = here("mergedResults.RData"))
+overallSummary <- results |>
+  filter(result_type == "summarised_omop_table") |>
+  select(-c(result_id, result_type, starts_with(c("package", "strata", "additional")))) |>
+  splitGroup()
+
+save(snapshot, overallSummary, file = here("mergedResults.RData"))

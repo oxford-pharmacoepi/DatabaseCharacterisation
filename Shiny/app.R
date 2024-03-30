@@ -134,8 +134,9 @@ ui <- dashboardPage(
           label = "Select database name",
           selected = snapshot$cdm_name |> unique(),
           choices = snapshot$cdm_name |> unique(),
-          multiple = F, 
-          inline = T
+          multiple = T, 
+          inline = T, 
+          width = "200px"
         ),
         tabsetPanel(
           type = "tabs",
@@ -148,6 +149,42 @@ ui <- dashboardPage(
             "Formatted table",
             downloadButton("snapshot_formatted_download", "Download word"),
             gt_output("snapshot_formatted") %>% withSpinner()
+          )
+        )
+      ),
+      # overall summary ----
+      tabItem(
+        tabName = "overall_summary",
+        h5("Overall summary"),
+        pickerInput(
+          inputId = "os_cdm_name", 
+          label = "Select database name",
+          selected = overallSummary$cdm_name |> unique(),
+          choices = overallSummary$cdm_name |> unique(),
+          multiple = T, 
+          inline = T, 
+          width = "200px"
+        ),
+        pickerInput(
+          inputId = "os_omop_table", 
+          label = "Select table",
+          selected = overallSummary$omop_table |> unique(),
+          choices = overallSummary$omop_table |> unique(),
+          multiple = T, 
+          inline = T, 
+          width = "200px"
+        ),
+        tabsetPanel(
+          type = "tabs",
+          tabPanel(
+            "Tidy table",
+            downloadButton("os_tidy_download", "Download csv"),
+            dataTableOutput("os_tidy") %>% withSpinner()
+          ),
+          tabPanel(
+            "Formatted table",
+            downloadButton("os_formatted_download", "Download word"),
+            gt_output("os_formatted") %>% withSpinner()
           )
         )
       )
@@ -192,6 +229,40 @@ server <- function(input, output) {
       getGtSnapshot() %>% gtsave(filename = file)
     }
   )
+  # omop table ----
+  getOsTidy <- reactive({
+    overallSummary |>
+      filterData("os", input)
+  })
+  output$os_tidy <- renderDataTable({
+    getOsTidy() |>
+      datatable()
+  })
+  output$os_tidy_download  <- downloadHandler(
+    filename = "omop_table_summary.csv",
+    content = function(file) {
+      getOsTidy() %>% write_csv(file = file)
+    }
+  )
+  getOsFormatted <- reactive({
+    overallSummary |>
+      #filterData("os", input) |>
+      formatEstimateValue() |>
+      formatEstimateName(
+        estimateNameFormat = c(
+          "N (%)" = "<count> (<percentage>%)",
+          "N" = "<count>",
+          "median [IQR]" = "<median> [<q25> - <q75>]",
+          "mean (sd)" = "<mean> (<sd>)",
+          "range" = "[<min> - <max>]"
+        )
+      ) |>
+      formatHeader(header = c("cdm_name")) |>
+      gtTable(groupNameCol = c("omop_table"))
+      
+  })
+  #output$os_formatted
+  #output$os_formatted_download
   # end ----
 }
 
