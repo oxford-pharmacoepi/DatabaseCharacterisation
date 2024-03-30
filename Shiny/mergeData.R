@@ -6,11 +6,11 @@ library(dplyr)
 library(tidyr)
 
 x <- list.files(here("data"))
-x <- x[tools::file_ext(x) == "zip"]
+y <- x[tools::file_ext(x) == "zip"]
 results <- emptySummarisedResult()
-for (k in seq_along(x)) {
+for (k in seq_along(y)) {
   folder <- tempdir()
-  files <- unzip(zipfile = here("data", x[k]), exdir = folder)
+  files <- unzip(zipfile = here("data", y[k]), exdir = folder)
   files <- files[tools::file_ext(files) == "csv"]
   for (i in seq_along(files)) {
     results <- results |>
@@ -19,6 +19,14 @@ for (k in seq_along(x)) {
       )
   }
   unlink(folder)
+}
+
+x <- x[tools::file_ext(x) == "csv"]
+for (i in seq_along(x)) {
+  results <- results |>
+    bind(
+      read_csv(x[i], show_col_types = FALSE) |> newSummarisedResult()
+    )
 }
 
 snapshot <- results |>
