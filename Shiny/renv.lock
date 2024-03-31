@@ -4,7 +4,7 @@
     "Repositories": [
       {
         "Name": "CRAN",
-        "URL": "https://cran.rstudio.com"
+        "URL": "https://packagemanager.posit.co/cran/latest"
       }
     ]
   },
@@ -18,14 +18,9 @@
     },
     "CDMConnector": {
       "Package": "CDMConnector",
-      "Version": "1.3.1",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "CDMConnector",
-      "RemoteUsername": "darwin-eu",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "737c5e77165b28bf5fec26a3e50b955d57f3b1f8",
+      "Version": "1.3.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
       "Requirements": [
         "DBI",
         "R",
@@ -50,7 +45,7 @@
         "waldo",
         "withr"
       ],
-      "Hash": "3ccd075702995eea08b2131196d7f919"
+      "Hash": "16612a52356bcf96f40849c7c5fa85b3"
     },
     "DBI": {
       "Package": "DBI",

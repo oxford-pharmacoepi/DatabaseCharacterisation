@@ -1,3 +1,7 @@
+
+# renv::activate()
+# renv::restore()
+
 library(shiny)
 library(shinydashboard)
 library(fresh)
