@@ -10,6 +10,7 @@ library(tidyr)
 library(visOmopResults)
 library(readr)
 library(ggplot2)
+library(here)
 
 load(here("mergedResults.RData"))
 
@@ -40,7 +41,7 @@ mytheme <- create_theme(
 
 # ui ----
 ui <- dashboardPage(
-  dashboardHeader(title = "database characaterisation"),
+  dashboardHeader(title = "db Characaterisation"),
   ## menu ----
   dashboardSidebar(
     sidebarMenu(

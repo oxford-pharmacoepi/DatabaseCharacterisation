@@ -23,6 +23,18 @@ cdm <- cdmFromCon(
 )
 info(logger, "CDM OBJECT CREATED")
 
+# correct eunomia
+if (dbName == "GiBleed") {
+  cdm$observation_period <- cdm$observation_period |>
+    dplyr::inner_join(
+      cdm$person |>
+        dplyr::select("person_id") |>
+        dplyr::distinct(),
+      by = "person_id"
+    ) |>
+    dplyr::compute(name = "observation_period", temporary = FALSE)
+}
+
 # create and export snapshot
 info(logger, "EXPORT SNAPSHOT")
 summary(cdm) |>
