@@ -133,7 +133,14 @@ ui <- dashboardPage(
           ),
           "."
         ),
-        h5("The study was conducted in Eunomia.")
+        h5(
+          "The study was conducted with synthetic data: ",
+          a("Eunomia.", href = "https://github.com/OHDSI/Eunomia"),
+          "The mock synthetic data is available using the ",
+          a("CodeToRunEunomia.R", href = "https://github.com/oxford-pharmacoepi/DatabaseCharacterisation/blob/main/Study/CodeToRunEunomia.R"),
+          " or you can download it from: ",
+          a("https://example-data.ohdsi.dev/GiBleed.zip", href = "https://example-data.ohdsi.dev/GiBleed.zip")
+        )
       ),
       ### cdm snapshot ----
       tabItem(
