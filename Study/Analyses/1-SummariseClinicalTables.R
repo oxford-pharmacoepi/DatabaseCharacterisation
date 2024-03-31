@@ -18,13 +18,17 @@ qualityChecks |>
   write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_quality_checks.csv")))
 info(logger, "quality checks finished")
 
-# incident counts ----
-info(logger, "denominator for counts")
-denominator <- overlapCounts(cdm$observation_period)
+# observation period ----
+info(logger, "observation period summary")
+overlapCounts(cdm$observation_period) |>
+  suppress(minCellCount = minCellCount) |>
+  write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_observation_period.csv")))
+info(logger, "observation period summarised")
 
-info(logger, "start incident counts")
+# counts ----
+info(logger, "start incidence counts")
 tables <- c(
-  "observation_period", "visit_occurrence", "condition_occurrence",
+  "visit_occurrence", "condition_occurrence",
   "drug_exposure", "procedure_occurrence", "device_exposure", "measurement",
   "observation", "death"
 )
@@ -33,29 +37,12 @@ incident <- emptySummarisedResult()
 for (table in tables) {
   info(logger, paste0("incident counts for: ", table))
   incident <- incident |>
-    bind(summariseIncidentCounts(cdm[[table]], denominator))
+    bind(incidenceCounts(cdm[[table]]))
 }
 incident |>
   suppress(minCellCount = minCellCount) |>
   write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_incident_counts.csv")))
 info(logger, "incident counts done")
-
-# overlap counts ----
-info(logger, "start overlap counts")
-tables <- c(
-  "visit_occurrence", "condition_occurrence", "drug_exposure", "device_exposure"
-)
-
-overlap <- emptySummarisedResult()
-for (table in tables) {
-  info(logger, paste0("overlap counts for: ", table))
-  overlap <- overlap |>
-    bind(summariseOverlapCounts(cdm[[table]], denominator))
-}
-overlap |>
-  suppress(minCellCount = minCellCount) |>
-  write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_overlap_counts.csv")))
-info(logger, "overlap counts done")
 
 # most common records ----
 info(logger, "concept counts")
