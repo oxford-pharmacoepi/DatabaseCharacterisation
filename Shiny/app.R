@@ -23,12 +23,11 @@ source(here("functions.R"))
 # theme ----
 mytheme <- create_theme(
   adminlte_color(
-    light_blue = "#0c0e0c" 
+    light_blue = "#073042" 
   ),
   adminlte_sidebar(
-    # width = "400px",
-    dark_bg = "#78B7C5",
-    dark_hover_bg = "#3B9AB2",
+    dark_bg = "#1f8cad",
+    dark_hover_bg = "#1c5570",
     dark_color = "white"
   ), 
   adminlte_global(
