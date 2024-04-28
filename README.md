@@ -9,7 +9,4 @@ This repo is organized as follows:
 An example of the generated shiny app run with synthetic data can be found in: [https://dpa-pde-oxford.shinyapps.io/databaseCharacterisation/](https://dpa-pde-oxford.shinyapps.io/databaseCharacterisation/).
 
 This work was funded by [HDR UK](https://www.hdruk.ac.uk/).
-
-![](https://github.com/oxford-pharmacoepi/DatabaseCharacterisation/blob/main/Shiny/www/hds_logo.png?raw=true)
-![](https://github.com/oxford-pharmacoepi/DatabaseCharacterisation/blob/main/Shiny/www/hdruk_main_rgb_transparentpng.png?raw=true)
-
+<img src="Shiny/www/hdruk_main_rgb_transparentpng.png" align="right" height="200"/>
