@@ -143,6 +143,16 @@ ui <- dashboardPage(
           a("CodeToRunEunomia.R", href = "https://github.com/oxford-pharmacoepi/DatabaseCharacterisation/blob/main/Study/CodeToRunEunomia.R"),
           " or you can download it from: ",
           a("https://example-data.ohdsi.dev/GiBleed.zip", href = "https://example-data.ohdsi.dev/GiBleed.zip")
+        ),
+        h5(
+          "This project was founded by: ",
+          a("HDRUK", href = "https://www.hdruk.ac.uk/"),
+          "."
+        ),
+        a(
+          img(src = "hdruk_main_rgb_transparentpng.png", align = "left", width = "200px"),
+          href = "https://www.hdruk.ac.uk/",
+          target = "_blank"
         )
       ),
       ### cdm snapshot ----

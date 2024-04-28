@@ -245,6 +245,7 @@ summaryQuality <- function(table) {
     tally() |>
     collect() |>
     dplyr::mutate(
+      "n" = as.numeric(.data$n),
       "type_name" = dplyr::if_else(
         is.na(.data$type_name), as.character(.data[[type]]), .data$type_name 
     )) |>
@@ -394,32 +395,16 @@ incidenceCounts <- function(table) {
   }
   x <- table |>
     rename("incidence_date" = all_of(date)) %>%
-    mutate(
-      "incidence_month" = !!datepart("incidence_date", "month"),
-      "incidence_year" = !!datepart("incidence_date", "year")
-    ) |>
-    group_by(incidence_month, incidence_year) %>%
+    mutate("incidence_year" = !!datepart("incidence_date", "year")) |>
+    group_by(incidence_year) %>%
     summarise("estimate_value" = dplyr::n(), .groups = "drop") |>
-    collect()
-  x <- x |>
+    collect() |>
     dplyr::mutate(
-      "variable_name" = "incidence_records",
-      "strata_level" = paste0(
-        as.character(.data$incidence_year), 
-        "-",
-        stringr::str_pad(.data$incidence_month, width = 2, pad = "0")
-      ),
-      "strata_name" = "year_month"
+      "estimate_value" = as.integer(.data$estimate_value),
+      "variable_name" = "incidence_records"
     ) |>
-    dplyr::select(dplyr::starts_with("strata"), "variable_name", "estimate_value") |>
-    dplyr::union_all(
-      x |>
-        dplyr::group_by(.data$incidence_year) |>
-        dplyr::summarise("estimate_value" = sum(.data$estimate_value)) |>
-        dplyr::mutate("variable_name" = "incidence_records") |>
-        dplyr::rename("year" = "incidence_year") |>
-        visOmopResults::uniteStrata(cols = "year")
-    ) |>
+    dplyr::rename("year" = "incidence_year") |>
+    visOmopResults::uniteStrata(cols = "year") |>
     dplyr::mutate(
       "result_id" = as.integer(1),
       "cdm_name" = omopgenerics::cdmName(omopgenerics::cdmReference(table)),
@@ -539,29 +524,6 @@ overlapCounts <- function(table) {
     dplyr::pull() |>
     format("%Y") |>
     as.numeric()
-  overlapRecordsMonth <- table %>%
-    mutate(
-      "start" = !!datepart(start_date, "month") + 12 * (
-        !!datepart(start_date, "year") - .env$minYear
-      ),
-      "end" = !!datepart(end_date, "month") + 12 * (
-        !!datepart(end_date, "year") - .env$minYear
-      )
-    ) |>
-    countRecords() |>
-    dplyr::mutate(
-      "year_month" = paste0(
-        as.character(ceiling(.data$group/12) - 1 + .env$minYear),
-        "-",
-        stringr::str_pad(
-          dplyr::if_else(.data$group %% 12 == 0, 12, .data$group %% 12), 
-          width = 2, 
-          pad = "0"
-        )
-      ),
-      "overlap_records" = .data$n
-    ) |>
-    dplyr::select(-c("n", "group"))
   overlapRecordsYear <- table %>%
     mutate(
       "start" = !!datepart(start_date, "year"),
@@ -571,22 +533,13 @@ overlapCounts <- function(table) {
     dplyr::rename("year" = "group", "overlap_records" = "n")
   omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with(tablePrefix))
   
-  x <- overlapRecordsMonth |>
+  x <- overlapRecordsYear |>
     tidyr::pivot_longer(
       cols = "overlap_records",
       names_to = "variable_name", 
       values_to = "estimate_value"
     ) |>
-    visOmopResults::uniteStrata("year_month") |>
-    dplyr::union_all(
-      overlapRecordsYear |>
-        tidyr::pivot_longer(
-          cols = "overlap_records",
-          names_to = "variable_name", 
-          values_to = "estimate_value"
-        ) |>
-        visOmopResults::uniteStrata("year")
-    ) |>
+    visOmopResults::uniteStrata("year") |>
     dplyr::mutate(
       "result_id" = as.integer(1),
       "cdm_name" = omopgenerics::cdmName(omopgenerics::cdmReference(table)),
