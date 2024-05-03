@@ -321,6 +321,7 @@ summaryQuality <- function(table) {
       additional_name = "overall", 
       additional_level = "overall"
     ) |>
+    mutate(variable_name = if_else(is.na(variable_name), "NA", variable_name)) |>
     newSummarisedResult()
   return(res)
 }
