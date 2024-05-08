@@ -223,7 +223,10 @@ summaryQuality <- function(table) {
   }
   if (!is.null(concept)) {
     x <- x |>
-      mutate(mapped = if_else(.data[[concept]] == 0, "No", "Yes")) |>
+      mutate(
+        !!concept := dplyr::if_else(is.na(.data[[concept]]), 0L, as.integer(.data[[concept]])),
+        mapped = if_else(.data[[concept]] == 0, "No", "Yes")
+      ) |>
       left_join(
         cdm$concept |>
           select("domain_id", !!concept := "concept_id"),
