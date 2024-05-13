@@ -633,7 +633,10 @@ summaryCodeCounts <- function(table, ageGroups) {
     ) |>
     dplyr::filter(!is.na(.data$prior_observation)) |>
     dplyr::rename("concept_id" = !!standardConcept(name)) %>%
-    dplyr::mutate("year" = !!datepart(date = startDate(name), interval = "year")) |>
+    dplyr::mutate(
+      "year" = !!datepart(date = startDate(name), interval = "year"),
+      "concept_id" = dplyr::if_else(is.na(.data$concept_id), 0L, as.integer(.data$concept_id))
+    ) |>
     dplyr::group_by(.data$concept_id, .data$age_group, .data$sex, .data$year) |>
     dplyr::tally() |>
     dplyr::collect()
