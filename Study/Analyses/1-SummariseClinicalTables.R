@@ -15,6 +15,7 @@ for (table in tables) {
 }
 qualityChecks |>
   suppress(minCellCount = minCellCount) |>
+  filter(!estimate_name %in% c("min","max")) |>
   write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_quality_checks.csv")))
 info(logger, "quality checks finished")
 
@@ -59,6 +60,7 @@ for (table in tables) {
   conceptCounts <- conceptCounts |>
     bind(summaryCodeCounts(cdm[[table]], ageGroups))
 }
+
 conceptCounts |>
   suppress(minCellCount = minCellCount) |>
   write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_concept_counts.csv")))

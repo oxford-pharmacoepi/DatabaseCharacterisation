@@ -12,5 +12,6 @@ cdm$denominator %>%
     "group_level" = "general population",
   ) |>
   suppress(minCellCount = minCellCount) |>
+  filter(!estimate_name %in% c("min","max")) |>
   write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_characteristics.csv")))
 info(logger, 'characteristics summarised')
