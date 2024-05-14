@@ -9,6 +9,7 @@ library(visOmopResults)
 x <- list.files(here("data"))
 y <- x[tools::file_ext(x) == "zip"]
 results <- emptySummarisedResult()
+
 for (k in seq_along(y)) {
   folder <- tempdir()
   files <- unzip(zipfile = here("data", y[k]), exdir = folder)
@@ -37,7 +38,8 @@ snapshot <- results |>
 overallSummary <- results |>
   filter(result_type == "summarised_omop_table") |>
   select(-c(result_id, result_type, starts_with(c("package", "strata", "additional")))) |>
-  splitGroup()
+  splitGroup() |>
+  filter(!estimate_name %in% c("min","max"))
 
 opResult <- results |>
   filter(result_type == "summarised_overlap_counts") |>
@@ -63,12 +65,14 @@ conceptCounts <- results |>
 
 characteristicsAtEntry <- results |>
   filter(result_type %in% c("summarised_characteristics", "summarised_demographics")) |>
-  filter(strata_name == "overall")
+  filter(strata_name == "overall") |>
+  filter(!estimate_name %in% c("min", "max"))
 
 characteristicsYear <- results |>
   filter(result_type %in% c("summarised_characteristics", "summarised_demographics")) |>
   filter(strata_name != "overall") |>
-  arrange(as.numeric(strata_level))
+  arrange(as.numeric(strata_level)) |>
+  filter(!estimate_name %in% c("min", "max"))
 
 summaryFollowup <- results |>
   filter(result_type == "summarised_followup") |>
@@ -85,7 +89,8 @@ summaryPersonDays <- results |>
     sex = factor(sex, levels = c("overall", "Female", "Male")),
     year = factor(year, levels = c("overall", as.character(1900:2050)))
   ) |>
-  arrange(age_group, sex, year)
+  arrange(age_group, sex, year) |>
+  filter(!estimate_name %in% c("min", "max"))
 
 save(
   snapshot, overallSummary, incidentCounts, conceptCounts, opResult, 
