@@ -31,10 +31,6 @@ cdmSchema <- "..."
 # all the permanent tables created
 writeSchema <- c(schema = "...", prefix = "...")
 
-# The name of the schema that contains the results from running Achilles put 
-# null if you dont have achielles results
-achillesSchema <- "..."
-
 # minimum counts that can be displayed according to data governance
 minCellCount <- "..."
 
