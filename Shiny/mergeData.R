@@ -41,25 +41,19 @@ overallSummary <- results |>
 
 opResult <- results |>
   filter(result_type == "summarised_overlap_counts") |>
+  filter(strata_name == "year") |>
   splitGroup() |>
   splitAdditional() |>
-  mutate(strata_level = if_else(
-    strata_name == "year",
-    as.Date(paste0(strata_level, "-01-01")),
-    as.Date(paste0(strata_level, "-01"))
-  )) |>
+  mutate(strata_level = as.Date(paste0(strata_level, "-01-01"))) |>
   select(-c("result_id", "result_type", "variable_level", starts_with(c("package"))))
 
 incidentCounts <- results |>
   filter(result_type == "summarised_incident_counts") |>
+  filter(strata_name == "year") |>
   splitGroup() |>
   splitAdditional() |>
   mutate(variable_name = paste0(variable_name, "_", estimate_name)) |>
-  mutate(strata_level = if_else(
-    strata_name == "year",
-    as.Date(paste0(strata_level, "-01-01")),
-    as.Date(paste0(strata_level, "-01"))
-  )) |>
+  mutate(strata_level = as.Date(paste0(strata_level, "-01-01"))) |>
   select(-c("result_id", "result_type", "variable_level", "estimate_name", starts_with(c("package"))))
 
 conceptCounts <- results |>

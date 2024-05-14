@@ -18,8 +18,7 @@ cdm <- cdmFromCon(
   con = db,
   cdmSchema = cdmSchema, 
   writeSchema = writeSchema, 
-  cdmName = dbName,
-  achillesSchema = achillesSchema
+  cdmName = dbName
 )
 info(logger, "CDM OBJECT CREATED")
 
