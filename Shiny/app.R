@@ -491,8 +491,7 @@ server <- function(input, output) {
           "N (%)" = "<count> (<percentage>%)",
           "N" = "<count>",
           "median [IQR]" = "<median> [<q25> - <q75>]",
-          "mean (sd)" = "<mean> (<sd>)",
-          "range" = "[<min> - <max>]"
+          "mean (sd)" = "<mean> (<sd>)"
         ), 
         keepNotFormatted = FALSE
       ) |>
@@ -734,8 +733,7 @@ server <- function(input, output) {
       formatEstimateValue() |>
       formatEstimateName(estimateNameFormat = c(
         "N" = "<count>",
-        "median [IQR]" = "<median> [<q25> - <q75>]",
-        "range" = "<min> to <max>"
+        "median [IQR]" = "<median> [<q25> - <q75>]"
       )) |>
       select(-"estimate_type") |>
       formatHeader(header = c("cdm_name", "year")) |>

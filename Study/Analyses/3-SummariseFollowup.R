@@ -12,5 +12,9 @@ result <- summarisePersonDays(
 )
 result |>
   omopgenerics::suppress(minCellCount = minCellCount) |>
+  filter(!estimate_name %in% c("min","max")) |>
   write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_persondays.csv")))
 info(logger, "person days summarised")
+
+
+  
