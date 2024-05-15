@@ -104,8 +104,10 @@ summarisePersonDays  <- function(cdm,
   
   # results by sex
   if (bySex == TRUE) {
-    cdm[[tmp1]] <- cdm[[tmp1]] |>
-      PatientProfiles::addSex()
+    cdm[[tmp1]] <- cdm[[tmp1]] |> 
+      addDemographics2(
+        age = FALSE, priorObservation = FALSE, futureObservation = FALSE
+      )
     result <- result |>
       dplyr::bind_rows(
         cdm[[tmp1]] |> summaryFollowUp(strata = c("age_group", "sex"))
@@ -171,7 +173,6 @@ summarisePersonDays  <- function(cdm,
   
   return(result)
 }
-
 summaryQuality <- function(table) {
   
   name <- tableName(table)
@@ -223,7 +224,7 @@ summaryQuality <- function(table) {
     x <- table |> mutate(in_observation = 1)
   } else {
     x <- table |>
-      addInObservation(indexDate = start)
+      addInObservation2(indexDate = start)
   }
   if (!is.null(concept)) {
     x <- x |>
@@ -255,7 +256,7 @@ summaryQuality <- function(table) {
       "n" = as.numeric(.data$n),
       "type_name" = dplyr::if_else(
         is.na(.data$type_name), as.character(.data[[type]]), .data$type_name 
-    )) |>
+      )) |>
     dplyr::select(-dplyr::all_of(type))
   
   res <- records |>
@@ -397,10 +398,7 @@ incidenceCounts <- function(table) {
     dplyr::select(dplyr::all_of(date), "person_id")
   if (name != "observation_period") {
     table <- table |>
-      PatientProfiles::addInObservation(
-        indexDate = date, nameStyle = "in_observation"
-      ) |>
-      dplyr::filter(.data$in_observation == 1)
+      filterInObservation(indexDate = date)
   }
   x <- table |>
     rename("incidence_date" = all_of(date)) %>%
@@ -631,7 +629,7 @@ summaryCodeCounts <- function(table, ageGroups) {
   }
   name <- omopgenerics::tableName(table)
   x <- table |>
-    PatientProfiles::addDemographics(
+    addDemographics2(
       indexDate = startDate(name), 
       ageGroup = ageGroups, 
       futureObservation = FALSE
@@ -767,7 +765,7 @@ summariseFollowUp <- function(cdm) {
     cdm = cdm, name = "denominator"
   )
   res <- cdm[["denominator"]] |>
-    PatientProfiles::addDemographics(
+    addDemographics2(
       priorObservation = FALSE, ageGroup = ageGroups
     ) |>
     dplyr::rename("age_group_at_entry" = "age_group") |>
@@ -814,4 +812,153 @@ summariseFollowUp <- function(cdm) {
     ) |>
     omopgenerics::newSummarisedResult()
   return(result)
+}
+addInObservation2 <- function(x, indexDate, nameStyle = "in_observation") {
+  cdm <- omopgenerics::cdmReference(x)
+  id <- c("person_id", "subject_id")
+  id <- id[id %in% colnames(x)]
+  x |>
+    dplyr::left_join(
+      x |>
+        dplyr::select(dplyr::all_of(c(id, "date" = indexDate))) |>
+        dplyr::inner_join(
+          cdm$observation_period |>
+            dplyr::select(
+              !!id := "person_id", 
+              "start" = "observation_period_start_date",
+              "end" = "observation_period_end_date"
+            ),
+          by = id
+        ) |>
+        dplyr::filter(.data$date >= .data$start & .data$date <= .data$end) |>
+        dplyr::mutate(!!nameStyle := 1),
+      by = "person_id"
+    ) |>
+    dplyr::mutate(!!nameStyle := dplyr::if_else(
+      is.na(.data[[nameStyle]]), 0, 1
+    ))
+}
+filterInObservation <- function(x, indexDate) {
+  cdm <- omopgenerics::cdmReference(x)
+  id <- c("person_id", "subject_id")
+  id <- id[id %in% colnames(x)]
+  x |>
+    dplyr::inner_join(
+      cdm$observation_period |>
+        dplyr::select(
+          !!id := "person_id", 
+          "start" = "observation_period_start_date",
+          "end" = "observation_period_end_date"
+        ),
+      by = id
+    ) |>
+    dplyr::filter(
+      .data[[indexDate]] >= .data$start & .data[[indexDate]] <= .data$end
+    )
+}
+addDemographics2 <- function(x, 
+                             indexDate = "cohort_start_date", 
+                             sex = TRUE, 
+                             age = TRUE,
+                             ageGroup = NULL,
+                             priorObservation = TRUE,
+                             futureObservation = TRUE) {
+  cdm <- omopgenerics::cdmReference(x)
+  idx <- colnames(x)[1]
+  id <- c("person_id", "subject_id")
+  id <- id[id %in% colnames(x)]
+  
+  if (futureObservation | priorObservation) {
+    qq <- c(
+      "as.integer(local(CDMConnector::datediff(start = 'start', end = indexDate, interval = 'day')))",
+      "as.integer(local(CDMConnector::datediff(start = indexDate, end = 'end_obs', interval = 'day')))"
+    )
+    qq <- qq[c(priorObservation, futureObservation)]
+    nms <- c("prior_observation", "future_observation")
+    nms <- nms[c(priorObservation, futureObservation)]
+    qq <- qq |>
+      rlang::parse_exprs() |>
+      rlang::set_names(nms)
+    x <- x |>
+      dplyr::left_join(
+        x |>
+          dplyr::select(dplyr::all_of(c(idx, id, indexDate))) |>
+          dplyr::inner_join(
+            cdm$observation_period |>
+              dplyr::select(
+                !!id := "person_id", 
+                "start" = "observation_period_start_date",
+                "end_obs" = "observation_period_end_date"
+              ),
+            by = id
+          ) |>
+          dplyr::filter(
+            .data$start <= .data[[indexDate]] & .data$end_obs >= .data[[indexDate]]
+          ) %>%
+          dplyr::mutate(!!!qq) |>
+          dplyr::select(-"start", -"end_obs"),
+        by = c(idx, id, indexDate)
+      )
+  }
+  
+  if (sex | age | !is.null(ageGroup)) {
+    xx <- x |>
+      dplyr::select(dplyr::all_of(c(idx, id, indexDate))) |>
+      dplyr::inner_join(
+        cdm$person |> 
+          dplyr::select(
+            !!id := "person_id", "gender_concept_id", "year_of_birth", 
+            "month_of_birth", "day_of_birth"
+          ) |>
+          dplyr::mutate(
+            "sex" = dplyr::case_when(
+              .data$gender_concept_id == 8507 ~ "Male",
+              .data$gender_concept_id == 8532 ~ "Female",
+              .default = "None"
+            ),
+            "day_of_birth" = dplyr::if_else(
+              is.na(.data$day_of_birth), 1, .data$day_of_birth
+            ),
+            "month_of_birth" = dplyr::if_else(
+              is.na(.data$month_of_birth), 1, .data$month_of_birth
+            ),
+            "birth_date" = as.Date(paste0(
+              as.character(as.integer(.data$year_of_birth)), "-", 
+              as.character(as.integer(.data$month_of_birth)), "-",
+              as.character(as.integer(.data$day_of_birth))
+            ))
+          ) |>
+          dplyr::select(dplyr::all_of(c(id, "sex", "birth_date"))),
+        by = id
+      )
+    if (age | !is.null(ageGroup)) {
+      xx <- xx %>%
+        dplyr::mutate(
+          "age" = !!CDMConnector::datediff("birth_date", indexDate, interval = "year")
+        )
+      if (!is.null(ageGroup)) {
+        agq <- ageGroupQuery(ageGroup)
+        xx <- xx |>
+          dplyr::mutate(!!!agq)
+      }
+    }
+    cols <- c("birth_date", "sex", "age")[c(TRUE, !sex, !age)]
+    xx <- xx |> dplyr::select(!dplyr::any_of(cols))
+    x <- x |>
+      dplyr::left_join(xx, by = c(idx, id, indexDate))
+  }
+  
+  return(x)
+}
+ageGroupQuery <- function(ageGroup) {
+  q <- "dplyr::case_when("
+  for (k in seq_along(ageGroup)) {
+    q <- paste0(
+      q, ".data$age >= ", ageGroup[[k]][1], " & .data$age <= ", 
+      ageGroup[[k]][2], " ~ '", ageGroup[[k]][1], " to ", ageGroup[[k]][2], "', " 
+    )
+  }
+  q <- paste0(q, ".default = 'None')")
+  q <- q |> rlang::parse_exprs() |> rlang::set_names("age_group")
+  return(q)
 }
