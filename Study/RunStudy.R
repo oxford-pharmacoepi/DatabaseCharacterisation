@@ -1,5 +1,5 @@
 # study parameters ----
-ageGroups <- list(c(0, 19), c(20, 39), c(40, 59), c(60, 79), c(80, Inf))
+ageGroups <- list(c(0, 19), c(20, 39), c(40, 59), c(60, 79), c(80, 150))
 
 # create logger ----
 resultsFolder <- here("Results", dbName)
