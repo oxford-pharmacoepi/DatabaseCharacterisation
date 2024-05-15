@@ -16,7 +16,7 @@ for (k in seq_along(y)) {
   for (i in seq_along(files)) {
     results <- results |>
       bind(
-        read_csv(files[i], show_col_types = FALSE) |> newSummarisedResult()
+        read_csv(files[i], show_col_types = FALSE, col_types = cols(.default = "c")) |> newSummarisedResult()
       )
   }
   unlink(folder)
@@ -31,55 +31,54 @@ for (i in seq_along(x)) {
 }
 
 snapshot <- results |>
-  set
-  filter(result_type == "cdm_snapshot") |>
+  filterSettings(result_type == "cdm_snapshot") |>
   select(cdm_name, variable_name, estimate_name, estimate_value)
 
 overallSummary <- results |>
-  filter(result_type == "summarised_omop_table") |>
-  select(-c(result_id, result_type, starts_with(c("package", "strata", "additional")))) |>
+  filterSettings(result_type == "summarised_omop_table") |>
+  select(-c(result_id, starts_with(c("strata", "additional")))) |>
   splitGroup()
 
 opResult <- results |>
-  filter(result_type == "summarised_overlap_counts") |>
+  filterSettings(result_type == "summarised_overlap_counts") |>
   filter(strata_name == "year") |>
   splitGroup() |>
   splitAdditional() |>
   mutate(strata_level = as.Date(paste0(strata_level, "-01-01"))) |>
-  select(-c("result_id", "result_type", "variable_level", starts_with(c("package"))))
+  select(-c("result_id", "variable_level"))
 
 incidentCounts <- results |>
-  filter(result_type == "summarised_incident_counts") |>
+  filterSettings(result_type == "summarised_incident_counts") |>
   filter(strata_name == "year") |>
   splitGroup() |>
   splitAdditional() |>
   mutate(variable_name = paste0(variable_name, "_", estimate_name)) |>
   mutate(strata_level = as.Date(paste0(strata_level, "-01-01"))) |>
-  select(-c("result_id", "result_type", "variable_level", "estimate_name", starts_with(c("package"))))
+  select(-c("result_id", "variable_level", "estimate_name"))
 
 conceptCounts <- results |>
-  filter(result_type == "summarised_code_counts") |>
+  filterSettings(result_type == "summarised_code_counts") |>
   select(-starts_with(c("result", "package"))) |>
   splitAll() 
 
 characteristicsAtEntry <- results |>
-  filter(result_type %in% c("summarised_characteristics", "summarised_demographics")) |>
+  filterSettings(result_type %in% c("summarised_characteristics", "summarised_demographics")) |>
   filter(strata_name == "overall")
 
 characteristicsYear <- results |>
-  filter(result_type %in% c("summarised_characteristics", "summarised_demographics")) |>
+  filterSettings(result_type %in% c("summarised_characteristics", "summarised_demographics")) |>
   filter(strata_name != "overall") |>
   arrange(as.numeric(strata_level))
 
 summaryFollowup <- results |>
-  filter(result_type == "summarised_followup") |>
+  filterSettings(result_type == "summarised_followup") |>
   splitStrata() |>
-  select(!starts_with(c("result", "package", "group", "additional")))
+  select(!starts_with(c("result",  "group", "additional")))
 
 summaryPersonDays <- results |>
-  filter(result_type == "summarised_person_days") |>
+  filterSettings(result_type == "summarised_person_days") |>
   splitAll() |>
-  select(!starts_with(c("result", "package", "population", "variable_level"))) |>
+  select(!starts_with(c("result", "population", "variable_level"))) |>
   mutate(age_group = if_else(age_group == "0 to 150", "overall", age_group)) |>
   mutate(
     age_group = factor(age_group, levels = c("overall", "0 to 19", "20 to 39", "40 to 59", "60 to 79", "80 to 150")),

@@ -11,9 +11,9 @@ info(logger, "followup summarised")
 info(logger, "summarise person days")
 result <- summarisePersonDays(
   cdm = cdm, ageGroup = c(list(c(0, 150)), ageGroups), byYear = TRUE, bySex = TRUE
-)
+) 
 
-result |>
+result |> 
   exportSummarisedResult(
     fileName = glue("{cdmName(cdm)}_persondays.csv"),
     path = here(resultsFolder)

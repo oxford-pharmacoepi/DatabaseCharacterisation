@@ -40,7 +40,7 @@ for (table in tables) {
   incident <- incident |>
     bind(incidenceCounts(cdm[[table]]))
 }
-incident |>
+incident |> 
   omopgenerics::exportSummarisedResult(fileName = glue("{cdmName(cdm)}_incident_counts.csv"), 
                                        path = here(resultsFolder))
 info(logger, "incident counts done")
@@ -61,7 +61,7 @@ for (table in tables) {
     bind(summaryCodeCounts(cdm[[table]], ageGroups))
 }
 
-conceptCounts |>
+conceptCounts |> 
   omopgenerics::exportSummarisedResult(fileName = glue("{cdmName(cdm)}_concept_counts.csv"), 
                                        path = here(resultsFolder))
 info(logger, "concept counts done")

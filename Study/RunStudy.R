@@ -36,9 +36,14 @@ if (dbName == "GiBleed") {
 
 # create and export snapshot
 info(logger, "EXPORT SNAPSHOT")
-summary(cdm) |>
-  suppress(minCellCount = minCellCount) |>
-  write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_snapshot.csv")))
+cdm |>
+  summary() |> 
+  newSummarisedResult(settings = tibble(result_id = 1,
+                                        result_type = "cdm_snapshot")) |>
+  exportSummarisedResult(
+    fileName = glue("{cdmName(cdm)}_snapshot.csv"),
+    path = here(resultsFolder)
+  )
 info(logger, "SNAPHSOT EXPORTED")
 
 # source functions
@@ -64,7 +69,7 @@ list_of_files <- list.files(path = here("Results", dbName),
                             pattern = ".csv",
                             full.names = TRUE)
 for(i in list_of_files){
-  as_tibble(read_csv(i)) |>
+  as_tibble(read_csv(i, col_types = cols(.default = "c"))) |>
     newSummarisedResult() |>
     filter(!estimate_name %in% c("min","max")) |>
     omopgenerics::suppress(minCellCount = minCellCount) |>
