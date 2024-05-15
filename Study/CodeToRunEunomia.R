@@ -16,6 +16,7 @@ library(PatientProfiles)
 library(IncidencePrevalence)
 library(omopgenerics)
 library(CohortCharacteristics)
+library(testthat)
 
 # database metadata and connection details
 # The name/ acronym for the database
