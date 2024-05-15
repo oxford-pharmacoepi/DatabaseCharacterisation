@@ -1,4 +1,3 @@
-
 # renv::activate()
 # renv::restore()
 
@@ -12,6 +11,7 @@ library(glue)
 library(PatientProfiles)
 library(IncidencePrevalence)
 library(omopgenerics)
+library(CohortCharacteristics)
 
 # database metadata and connection details
 # The name/ acronym for the database
