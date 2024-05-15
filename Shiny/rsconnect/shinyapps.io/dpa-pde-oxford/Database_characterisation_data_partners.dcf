@@ -1,0 +1,13 @@
+name: Database_characterisation_data_partners
+title: Database_characterisation_data_partners
+username: dpa-pde-oxford
+account: dpa-pde-oxford
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 12006603
+bundleId: 8618436
+url: https://dpa-pde-oxford.shinyapps.io/Database_characterisation_data_partners/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .Rprofile|data/GiBleed.zip|data/README.md|renv.lock
