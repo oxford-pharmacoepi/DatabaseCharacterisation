@@ -11,5 +11,8 @@ cdm$denominator |>
     "strata_level" = .data$group_level,
     "group_level" = "general population",
   ) |>
-  write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_characteristics.csv")))
+  exportSummarisedResult(
+    fileName = glue("{cdmName(cdm)}_characteristics.csv"),
+    path = here(resultsFolder)
+  )
 info(logger, 'characteristics summarised')
