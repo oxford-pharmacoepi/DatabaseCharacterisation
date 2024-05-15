@@ -526,7 +526,7 @@ server <- function(input, output) {
       pivot_wider(names_from = cdm_name, values_from = estimate_value)
   })
   output$ic_tidy <- renderDataTable({
-    getIcTidy() 
+    datatable(getIcTidy(), options = list(scrollX = TRUE))
   })
   output$ic_tidy_download  <- downloadHandler(
     filename = "omop_table_incident_counts.csv",
@@ -578,7 +578,7 @@ server <- function(input, output) {
       pivot_wider(names_from = cdm_name, values_from = estimate_value)
   })
   output$cc_tidy <- renderDataTable({
-    getCcTidy()
+    datatable(getCcTidy(), options = list(scrollX = TRUE))
   })
   output$cc_tidy_download <- downloadHandler(
     filename = "omop_table_code_counts.csv",
