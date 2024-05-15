@@ -521,7 +521,9 @@ server <- function(input, output) {
   getIcTidy <- reactive({
     incidentCounts |>
       filterData("ic", input) |>
-      mutate(estimate_value = as.numeric(estimate_value))
+      mutate(estimate_value = as.numeric(estimate_value)) |>
+      select("omop_table", "strata_name", "strata_level", "variable_name", "cdm_name", "estimate_value") |>
+      pivot_wider(names_from = cdm_name, values_from = estimate_value)
   })
   output$ic_tidy <- renderDataTable({
     getIcTidy() 
