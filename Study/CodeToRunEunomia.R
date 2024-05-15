@@ -16,6 +16,7 @@ library(PatientProfiles)
 library(IncidencePrevalence)
 library(omopgenerics)
 library(CohortCharacteristics)
+library(testthat)
 
 # database metadata and connection details
 # The name/ acronym for the database
@@ -45,6 +46,7 @@ writeSchema <- c(schema = "main", prefix = "mc_")
 # minimum counts that can be displayed according to data governance
 minCellCount <- 8
 
+sampleValue <- FALSE # TRUE OR FALSE
 # Run the study
 source(here("RunStudy.R"))
 

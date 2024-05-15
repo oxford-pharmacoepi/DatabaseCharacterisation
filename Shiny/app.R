@@ -222,11 +222,11 @@ ui <- dashboardPage(
             downloadButton("cc_tidy_download", "Download csv"),
             dataTableOutput("cc_tidy") %>% withSpinner()
           ),
-          tabPanel(
-            "Formatted table",
-            downloadButton("cc_formatted_download", "Download word"),
-            gt_output("cc_formatted") %>% withSpinner()
-          )
+          # tabPanel(
+          #   "Formatted table",
+          #   downloadButton("cc_formatted_download", "Download word"),
+          #   gt_output("cc_formatted") %>% withSpinner()
+          # )
         )
       ),
       ### characteristics at entry ----
@@ -382,11 +382,11 @@ ui <- dashboardPage(
             downloadButton("ic_tidy_download", "Download csv"),
             dataTableOutput("ic_tidy") %>% withSpinner()
           ),
-          tabPanel(
-            "Formatted table",
-            downloadButton("ic_formatted_download", "Download word"),
-            gt_output("ic_formatted") %>% withSpinner()
-          ),
+          # tabPanel(
+          #   "Formatted table",
+          #   downloadButton("ic_formatted_download", "Download word"),
+          #   gt_output("ic_formatted") %>% withSpinner()
+          # ),
           tabPanel(
             "Plot",
             plotOutput("ic_plot") %>% withSpinner()
@@ -521,10 +521,12 @@ server <- function(input, output) {
   getIcTidy <- reactive({
     incidentCounts |>
       filterData("ic", input) |>
-      mutate(estimate_value = as.numeric(estimate_value))
+      mutate(estimate_value = as.numeric(estimate_value)) |>
+      select("omop_table", "strata_name", "strata_level", "variable_name", "cdm_name", "estimate_value") |>
+      pivot_wider(names_from = cdm_name, values_from = estimate_value)
   })
   output$ic_tidy <- renderDataTable({
-    getIcTidy() 
+    datatable(getIcTidy(), options = list(scrollX = TRUE))
   })
   output$ic_tidy_download  <- downloadHandler(
     filename = "omop_table_incident_counts.csv",
@@ -533,30 +535,30 @@ server <- function(input, output) {
         write_csv(file = file)
     }
   )
-  getIcFormatted <- reactive({
-    incidentCounts |>
-      filterData("ic", input) |>
-      mutate(estimate_name = NA) |>
-      formatEstimateValue() |>
-      select(-estimate_name) |>
-      arrange(strata_level) |>
-      mutate(Time = as.character(strata_level)) |>
-      formatHeader(header = c("cdm_name")) |>
-      select(-"estimate_type", -"strata_name", -"strata_level") |>
-      rename("Variable" = "variable_name") |>
-      gtTable(
-        groupNameCol = c("omop_table"), 
-        colsToMergeRows = c("Variable")
-      )
-  })
-  output$ic_formatted <- render_gt(getIcFormatted())
-  output$ic_formatted_download <- downloadHandler(
-    filename = "omop_table_incident_counts.docx",
-    content = function(file) {
-      getIcFormatted() |>
-        gtsave(filename = file)
-    }
-  )
+  # getIcFormatted <- reactive({
+  #   incidentCounts |>
+  #     filterData("ic", input) |>
+  #     mutate(estimate_name = NA) |>
+  #     formatEstimateValue() |>
+  #     select(-estimate_name) |>
+  #     arrange(strata_level) |>
+  #     mutate(Time = as.character(strata_level)) |>
+  #     formatHeader(header = c("cdm_name")) |>
+  #     select(-"estimate_type", -"strata_name", -"strata_level") |>
+  #     rename("Variable" = "variable_name") |>
+  #     gtTable(
+  #       groupNameCol = c("omop_table"), 
+  #       colsToMergeRows = c("Variable")
+  #     )
+  # })
+  # output$ic_formatted <- render_gt(getIcFormatted())
+  # output$ic_formatted_download <- downloadHandler(
+  #   filename = "omop_table_incident_counts.docx",
+  #   content = function(file) {
+  #     getIcFormatted() |>
+  #       gtsave(filename = file)
+  #   }
+  # )
   output$ic_plot <- renderPlot({
     incidentCounts |>
       filterData("ic", input) |>
@@ -570,10 +572,13 @@ server <- function(input, output) {
   getCcTidy <- reactive({
     conceptCounts |>
       filterData("cc", input) |>
-      mutate(estimate_value = as.numeric(estimate_value))
+      mutate(estimate_value = as.numeric(estimate_value)) |> 
+      select("omop_table", "sex", "age_group", "year", "concept_name" = "variable_name",
+             "concept_id" = "variable_level", "cdm_name", "estimate_value") |>
+      pivot_wider(names_from = cdm_name, values_from = estimate_value)
   })
   output$cc_tidy <- renderDataTable({
-    getCcTidy() 
+    datatable(getCcTidy(), options = list(scrollX = TRUE))
   })
   output$cc_tidy_download <- downloadHandler(
     filename = "omop_table_code_counts.csv",
@@ -583,27 +588,27 @@ server <- function(input, output) {
     }
   )
   ## code counts gt ----
-  getCcFormatted <- reactive({
-    conceptCounts |>
-      filterData("cc", input) |>
-      arrange(desc(as.numeric(estimate_value))) |>
-      formatEstimateValue() |>
-      formatHeader(header = c("cdm_name")) |>
-      select(-"estimate_type", -"estimate_name") |>
-      rename("Concept name" = "variable_name", "Concept id" = "variable_level") |>
-      gtTable(
-        groupNameCol = c("omop_table"), 
-        colsToMergeRows = c("Concept name", "Concept id")
-      )
-  })
-  output$cc_formatted <- render_gt(getCcFormatted())
-  output$cc_formatted_download <- downloadHandler(
-    filename = "omop_table_code_counts.docx",
-    content = function(file) {
-      getCcFormatted() |>
-        gtsave(filename = file)
-    }
-  )
+  # getCcFormatted <- reactive({
+  #   conceptCounts |>
+  #     filterData("cc", input) |>
+  #     arrange(desc(as.numeric(estimate_value))) |>
+  #     formatEstimateValue() |>
+  #     formatHeader(header = c("cdm_name")) |>
+  #     select(-"estimate_type", -"estimate_name") |>
+  #     rename("Concept name" = "variable_name", "Concept id" = "variable_level") |>
+  #     gtTable(
+  #       groupNameCol = c("omop_table"), 
+  #       colsToMergeRows = c("Concept name", "Concept id")
+  #     )
+  # })
+  # output$cc_formatted <- render_gt(getCcFormatted())
+  # output$cc_formatted_download <- downloadHandler(
+  #   filename = "omop_table_code_counts.docx",
+  #   content = function(file) {
+  #     getCcFormatted() |>
+  #       gtsave(filename = file)
+  #   }
+  # )
   #
   ## characteristics entry tidy ----
   getCeTidy <- reactive({

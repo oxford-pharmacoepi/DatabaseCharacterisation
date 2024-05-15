@@ -224,7 +224,7 @@ summaryQuality <- function(table) {
     x <- table |> mutate(in_observation = 1)
   } else {
     x <- table |>
-      addInObservation2(indexDate = start)
+      addInObservation(indexDate = start)
   }
   if (!is.null(concept)) {
     x <- x |>
@@ -368,7 +368,13 @@ standardConcept <- function(name) {
     "observation_period" = NULL,
     "visit_occurrence" = "visit_concept_id",
     "condition_occurrence" = "condition_concept_id",
+    "condition_era" = "condition_concept_id",
+    "concept" = "concept_id",
+    "concept_synonym" = "concept_id",
     "drug_exposure" = "drug_concept_id",
+    "drug_era" = "drug_concept_id",
+    "dose_era" = "drug_concept_id",
+    "drug_strength" = "drug_concept_id",
     "procedure_occurrence" = "procedure_concept_id",
     "device_exposure" = "device_concept_id",
     "measurement" = "measurement_concept_id",
@@ -813,31 +819,31 @@ summariseFollowUp <- function(cdm) {
     omopgenerics::newSummarisedResult()
   return(result)
 }
-addInObservation2 <- function(x, indexDate, nameStyle = "in_observation") {
-  cdm <- omopgenerics::cdmReference(x)
-  id <- c("person_id", "subject_id")
-  id <- id[id %in% colnames(x)]
-  x |>
-    dplyr::left_join(
-      x |>
-        dplyr::select(dplyr::all_of(c(id, "date" = indexDate))) |>
-        dplyr::inner_join(
-          cdm$observation_period |>
-            dplyr::select(
-              !!id := "person_id", 
-              "start" = "observation_period_start_date",
-              "end" = "observation_period_end_date"
-            ),
-          by = id
-        ) |>
-        dplyr::filter(.data$date >= .data$start & .data$date <= .data$end) |>
-        dplyr::mutate(!!nameStyle := 1),
-      by = "person_id"
-    ) |>
-    dplyr::mutate(!!nameStyle := dplyr::if_else(
-      is.na(.data[[nameStyle]]), 0, 1
-    ))
-}
+# addInObservation2 <- function(x, indexDate, nameStyle = "in_observation") {
+#   cdm <- omopgenerics::cdmReference(x)
+#   id <- c("person_id", "subject_id")
+#   id <- id[id %in% colnames(x)]
+#   x |>
+#     dplyr::left_join(
+#       x |>
+#         dplyr::select(dplyr::all_of(c(id, "date" = indexDate))) |>
+#         dplyr::inner_join(
+#           cdm$observation_period |>
+#             dplyr::select(
+#               !!id := "person_id", 
+#               "start" = "observation_period_start_date",
+#               "end" = "observation_period_end_date"
+#             ),
+#           by = id
+#         ) |>
+#         dplyr::filter(.data$date >= .data$start & .data$date <= .data$end) |>
+#         dplyr::mutate(!!nameStyle := 1),
+#       by = "person_id"
+#     ) |>
+#     dplyr::mutate(!!nameStyle := dplyr::if_else(
+#       is.na(.data[[nameStyle]]), 0, 1
+#     ))
+# }
 filterInObservation <- function(x, indexDate) {
   cdm <- omopgenerics::cdmReference(x)
   id <- c("person_id", "subject_id")
