@@ -31,6 +31,7 @@ for (i in seq_along(x)) {
 }
 
 snapshot <- results |>
+  set
   filter(result_type == "cdm_snapshot") |>
   select(cdm_name, variable_name, estimate_name, estimate_value)
 

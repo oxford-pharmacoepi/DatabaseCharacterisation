@@ -14,13 +14,16 @@ for (table in tables) {
     bind(summaryQuality(cdm[[table]]))
 }
 qualityChecks |>
-  write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_quality_checks.csv")))
+  exportSummarisedResult(fileName = glue("{cdmName(cdm)}_quality_checks.csv"), 
+                         path = here(resultsFolder))
+
 info(logger, "quality checks finished")
 
 # observation period ----
 info(logger, "observation period summary")
 overlapCounts(cdm$observation_period) |>
-  write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_observation_period.csv")))
+  omopgenerics::exportSummarisedResult(fileName = glue("{cdmName(cdm)}_observation_period.csv"), 
+                                       path = here(resultsFolder))
 info(logger, "observation period summarised")
 
 # counts ----
@@ -38,7 +41,8 @@ for (table in tables) {
     bind(incidenceCounts(cdm[[table]]))
 }
 incident |>
-  write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_incident_counts.csv")))
+  omopgenerics::exportSummarisedResult(fileName = glue("{cdmName(cdm)}_incident_counts.csv"), 
+                                       path = here(resultsFolder))
 info(logger, "incident counts done")
 
 # most common records ----
@@ -58,6 +62,7 @@ for (table in tables) {
 }
 
 conceptCounts |>
-  write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_concept_counts.csv")))
+  omopgenerics::exportSummarisedResult(fileName = glue("{cdmName(cdm)}_concept_counts.csv"), 
+                                       path = here(resultsFolder))
 info(logger, "concept counts done")
 
