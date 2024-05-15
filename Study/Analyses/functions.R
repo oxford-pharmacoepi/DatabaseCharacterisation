@@ -823,10 +823,12 @@ addInObservation2 <- function(x, indexDate, nameStyle = "in_observation") {
   cdm <- omopgenerics::cdmReference(x)
   id <- c("person_id", "subject_id")
   id <- id[id %in% colnames(x)]
+  idx <- colnames(x)[1]
+  join <- unique(c(idx, id, indexDate))
   x |>
     dplyr::left_join(
       x |>
-        dplyr::select(dplyr::all_of(c(id, indexDate))) |>
+        dplyr::select(dplyr::all_of(join)) |>
         dplyr::inner_join(
           cdm$observation_period |>
             dplyr::select(
@@ -839,8 +841,9 @@ addInObservation2 <- function(x, indexDate, nameStyle = "in_observation") {
         dplyr::filter(
           .data[[indexDate]] >= .data$start & .data[[indexDate]] <= .data$end
         ) |>
-        dplyr::mutate(!!nameStyle := 1),
-      by = c(id, indexDate)
+        dplyr::mutate(!!nameStyle := 1) |>
+        dplyr::select(-"start", -"end"),
+      by = join
     ) |>
     dplyr::mutate(!!nameStyle := dplyr::if_else(
       is.na(.data[[nameStyle]]), 0, 1
