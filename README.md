@@ -1,4 +1,4 @@
-# database characterisation tool <img src="Shiny/www/hds_logo.png" align="right" height="200"/>
+# database characterisation tool <img src="Shiny/www/Logo_HDS_Readme.png" align="right" height="200"/>
 
 This code provides the tools to characterise a database mapped to the OMOP Common Data Model.
 

@@ -15,6 +15,7 @@ library(visOmopResults)
 library(readr)
 library(ggplot2)
 library(here)
+library(CohortCharacteristics)
 
 load(here("mergedResults.RData"))
 
@@ -624,14 +625,14 @@ server <- function(input, output) {
   output$ce_formatted <- render_gt({
     characteristicsAtEntry |>
       filterData("ce", input) |>
-      PatientProfiles::tableCharacteristics(header = "cdm_name")
+      CohortCharacteristics::tableCharacteristics(header = "cdm_name")
   })
   output$ce_formatted_download <- downloadHandler(
     filename = "characteristics_at_entry.docx",
     content = function(file) {
       characteristicsAtEntry |>
         filterData("ce", input) |>
-        PatientProfiles::tableCharacteristics(header = "cdm_name") |>
+        CohortCharacteristics::tableCharacteristics(header = "cdm_name") |>
         gtsave(filename = file)
     }
   )
@@ -655,15 +656,15 @@ server <- function(input, output) {
   ## characteristics year gt ----
   output$cy_formatted <- render_gt({
     characteristicsYear |>
-      filterData("cy", input) |>
-      PatientProfiles::tableCharacteristics(header = c("cdm_name", "strata"))
+      # filterData("cy", input) |>
+      CohortCharacteristics::tableCharacteristics(header = c("cdm_name", "strata"))
   })
   output$cy_formatted_download <- downloadHandler(
     filename = "characteristics_year.docx",
     content = function(file) {
       characteristicsYear |>
         filterData("cy", input) |>
-        PatientProfiles::tableCharacteristics(header = c("cdm_name", "strata")) |>
+        CohortCharacteristics::tableCharacteristics(header = c("cdm_name", "strata")) |>
         gtsave(filename = file)
     }
   )
