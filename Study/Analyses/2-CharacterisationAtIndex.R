@@ -2,8 +2,8 @@ info(logger, 'create denominator cohorts')
 cdm <- generateYearCohortSet(cdm = cdm, name = "denominator")
 
 info(logger, 'summarise characteristics')
-cdm$denominator %>%
-  PatientProfiles::summariseCharacteristics(ageGroup = ageGroups) |>
+cdm$denominator |>
+  CohortCharacteristics::summariseCharacteristics(ageGroup = ageGroups) |>
   dplyr::mutate(
     "strata_name" = dplyr::if_else(
       .data$group_level == "overall", "overall", "year"

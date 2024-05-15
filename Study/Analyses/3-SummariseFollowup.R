@@ -9,6 +9,7 @@ info(logger, "summarise person days")
 result <- summarisePersonDays(
   cdm = cdm, ageGroup = c(list(c(0, 150)), ageGroups), byYear = TRUE, bySex = TRUE
 )
+
 result |>
   write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_persondays.csv")))
 info(logger, "person days summarised")
