@@ -382,11 +382,11 @@ ui <- dashboardPage(
             downloadButton("ic_tidy_download", "Download csv"),
             dataTableOutput("ic_tidy") %>% withSpinner()
           ),
-          tabPanel(
-            "Formatted table",
-            downloadButton("ic_formatted_download", "Download word"),
-            gt_output("ic_formatted") %>% withSpinner()
-          ),
+          # tabPanel(
+          #   "Formatted table",
+          #   downloadButton("ic_formatted_download", "Download word"),
+          #   gt_output("ic_formatted") %>% withSpinner()
+          # ),
           tabPanel(
             "Plot",
             plotOutput("ic_plot") %>% withSpinner()
@@ -535,30 +535,30 @@ server <- function(input, output) {
         write_csv(file = file)
     }
   )
-  getIcFormatted <- reactive({
-    incidentCounts |>
-      filterData("ic", input) |>
-      mutate(estimate_name = NA) |>
-      formatEstimateValue() |>
-      select(-estimate_name) |>
-      arrange(strata_level) |>
-      mutate(Time = as.character(strata_level)) |>
-      formatHeader(header = c("cdm_name")) |>
-      select(-"estimate_type", -"strata_name", -"strata_level") |>
-      rename("Variable" = "variable_name") |>
-      gtTable(
-        groupNameCol = c("omop_table"), 
-        colsToMergeRows = c("Variable")
-      )
-  })
-  output$ic_formatted <- render_gt(getIcFormatted())
-  output$ic_formatted_download <- downloadHandler(
-    filename = "omop_table_incident_counts.docx",
-    content = function(file) {
-      getIcFormatted() |>
-        gtsave(filename = file)
-    }
-  )
+  # getIcFormatted <- reactive({
+  #   incidentCounts |>
+  #     filterData("ic", input) |>
+  #     mutate(estimate_name = NA) |>
+  #     formatEstimateValue() |>
+  #     select(-estimate_name) |>
+  #     arrange(strata_level) |>
+  #     mutate(Time = as.character(strata_level)) |>
+  #     formatHeader(header = c("cdm_name")) |>
+  #     select(-"estimate_type", -"strata_name", -"strata_level") |>
+  #     rename("Variable" = "variable_name") |>
+  #     gtTable(
+  #       groupNameCol = c("omop_table"), 
+  #       colsToMergeRows = c("Variable")
+  #     )
+  # })
+  # output$ic_formatted <- render_gt(getIcFormatted())
+  # output$ic_formatted_download <- downloadHandler(
+  #   filename = "omop_table_incident_counts.docx",
+  #   content = function(file) {
+  #     getIcFormatted() |>
+  #       gtsave(filename = file)
+  #   }
+  # )
   output$ic_plot <- renderPlot({
     incidentCounts |>
       filterData("ic", input) |>
