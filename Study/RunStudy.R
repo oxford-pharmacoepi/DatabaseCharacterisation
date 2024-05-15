@@ -22,6 +22,10 @@ cdm <- cdmFromCon(
 )
 info(logger, "CDM OBJECT CREATED")
 
+if(sample == TRUE){
+  cdm <- CDMConnector::sample(cdm, n = 10000)
+}
+
 # correct eunomia
 if (dbName == "GiBleed") {
   cdm$observation_period <- cdm$observation_period |>

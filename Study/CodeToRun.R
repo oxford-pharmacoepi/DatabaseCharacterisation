@@ -35,6 +35,8 @@ writeSchema <- c(schema = "...", prefix = "...")
 # minimum counts that can be displayed according to data governance
 minCellCount <- "..."
 
+sample <- "..." # TRUE OR FALSE
+
 # Run the study
 source(here("RunStudy.R"))
 
