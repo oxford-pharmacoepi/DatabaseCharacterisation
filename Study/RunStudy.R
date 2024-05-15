@@ -29,14 +29,18 @@ if(sampleValue == TRUE){
 # source functions
 source(here("Analyses", "functions.R"))
 
+# Replace NA in concept id
 for(table in names(cdm)){
-  cdm[[table]] |>
-    dplyr::rename("concept_id" = !!standardConcept(name)) |>
-    dplyr::mutate(concept_id = if_else(is.na(concept_id), 0, concept_id)) |>
-    dplyr::rename(!!standardConcept(name) = "concept_id")
-    
-    
-
+  names <- c("concept_id", "visit_concept_id",
+             "condition_concept_id", "drug_concept_id", "procedure_concept_id",
+             "device_concept_id", "measurement_concept_id",  "observation_concept_id",
+             "cause_concept_id")
+  if(TRUE %in% (colnames(cdm[[table]]) %in% names)){
+    cdm[[table]] |>
+      rename("concept_id" = !!standardConcept(table)) |>
+      mutate(concept_id = if_else(is.na(concept_id), 0L, as.integer(concept_id))) |>
+      rename(!!standardConcept(table) := "concept_id")
+  }
 }
 
 # correct eunomia
