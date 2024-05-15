@@ -42,7 +42,7 @@ cdmSchema <- "main"
 writeSchema <- c(schema = "main", prefix = "mc_")
 
 # minimum counts that can be displayed according to data governance
-minCellCount <- 5
+minCellCount <- 8
 
 # Run the study
 source(here("RunStudy.R"))

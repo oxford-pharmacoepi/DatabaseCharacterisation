@@ -122,7 +122,7 @@ ui <- dashboardPage(
       tabItem(
         tabName = "background",
         a(
-          img(src = "hds_logo.png", align = "right", width = "200px"),
+          img(src = "logo_HDS.png", align = "right", width = "200px"),
           href = "https://www.ndorms.ox.ac.uk/research/research-groups/Musculoskeletal-Pharmacoepidemiology/",
           target = "_blank"
         ),
