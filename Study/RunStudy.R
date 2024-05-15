@@ -68,7 +68,10 @@ for(i in list_of_files){
     newSummarisedResult() |>
     filter(!estimate_name %in% c("min","max")) |>
     omopgenerics::suppress(minCellCount = minCellCount) |>
-    write_csv(file = here(resultsFolder, glue(gsub(".*/","",i))))
+    exportSummarisedResult(
+      fileName = glue(gsub(".*/","",i)),
+      path = here(resultsFolder)
+    )
 }
 info(logger,"4 - EXPORTED DATA CREATED")
 

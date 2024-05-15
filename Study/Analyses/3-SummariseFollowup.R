@@ -1,7 +1,10 @@
 # summarise followup ----
 info(logger, "summarise followup")
 summariseFollowUp(cdm) |>
-  write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_followup.csv")))
+  exportSummarisedResult(
+    fileName = glue("{cdmName(cdm)}_followup.csv"),
+    path = here(resultsFolder)
+  )
 info(logger, "followup summarised")
 
 # summarise person-days ----
@@ -11,7 +14,10 @@ result <- summarisePersonDays(
 )
 
 result |>
-  write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_persondays.csv")))
+  exportSummarisedResult(
+    fileName = glue("{cdmName(cdm)}_persondays.csv"),
+    path = here(resultsFolder)
+  )
 info(logger, "person days summarised")
 
 
