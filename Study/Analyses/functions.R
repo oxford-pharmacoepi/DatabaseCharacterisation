@@ -173,11 +173,14 @@ summarisePersonDays  <- function(cdm,
 }
 
 summaryQuality <- function(table) {
+  
   name <- tableName(table)
   concept <- standardConcept(name)
   type <- typeConcept(name)
   start <- startDate(name)
+  
   cdm <- omopgenerics::cdmReference(table)
+  
   den <- cdm$person |> dplyr::ungroup() |> dplyr::tally() |> dplyr::pull()
   records <- table |>
     dplyr::ungroup() |>
@@ -186,7 +189,7 @@ summaryQuality <- function(table) {
       "number_subjects-count" = dplyr::n_distinct(.data$person_id),
     ) |>
     dplyr::collect() |>
-    dplyr::mutate("number_subjects-percentage" = 100 * .data[["number_subjects-count"]] / .env$den) |>
+    # dplyr::mutate("number_subjects-percentage" = 100 * .data[["number_subjects-count"]] / .env$den) |>
     dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) |>
     tidyr::pivot_longer(
       cols = dplyr::everything(), 
@@ -202,6 +205,7 @@ summaryQuality <- function(table) {
     )
   totalrecords <- as.numeric(records$estimate_value[records$variable_name == "number_records"])
   recordName <- "records_per_person"
+  
   nIndividuals <- table |>
     group_by(person_id) |>
     tally(name = recordName) |>
@@ -211,10 +215,10 @@ summaryQuality <- function(table) {
     mutate(!!recordName := as.integer(.data[[recordName]])) |>
     summariseResult(
       variables = recordName, 
-      estimates = c("mean", "sd", "median", "q25", "q75", "q05", "q95", "min", "max"),
-      verbose = F, 
+      estimates = c("mean", "sd", "median", "q25", "q75", "q05", "q95"),
       counts = F
     )
+  
   if (name == "observation_period") {
     x <- table |> mutate(in_observation = 1)
   } else {
@@ -240,7 +244,7 @@ summaryQuality <- function(table) {
     left_join(
       cdm$concept |>
         select("type_name" = "concept_name", !!type := "concept_id"),
-      by = type
+      by = type,
     ) |>
     dplyr::group_by(dplyr::across(dplyr::all_of(c(
       "in_observation", "mapped", "domain_id", "type_name", type
@@ -253,11 +257,12 @@ summaryQuality <- function(table) {
         is.na(.data$type_name), as.character(.data[[type]]), .data$type_name 
     )) |>
     dplyr::select(-dplyr::all_of(type))
+  
   res <- records |>
     dplyr::union_all(
       nIndividuals |>
         select(variable_name, variable_level, estimate_name, estimate_type, estimate_value)
-    )|>
+    ) |>
     union_all(
       x |>
         group_by(in_observation) |>
