@@ -22,8 +22,21 @@ cdm <- cdmFromCon(
 )
 info(logger, "CDM OBJECT CREATED")
 
-if(sample == TRUE){
+if(sampleValue == TRUE){
   cdm <- CDMConnector::sample(cdm, n = 10000)
+}
+
+# source functions
+source(here("Analyses", "functions.R"))
+
+for(table in names(cdm)){
+  cdm[[table]] |>
+    dplyr::rename("concept_id" = !!standardConcept(name)) |>
+    dplyr::mutate(concept_id = if_else(is.na(concept_id), 0, concept_id)) |>
+    dplyr::rename(!!standardConcept(name) = "concept_id")
+    
+    
+
 }
 
 # correct eunomia
@@ -50,8 +63,7 @@ cdm |>
   )
 info(logger, "SNAPHSOT EXPORTED")
 
-# source functions
-source(here("Analyses", "functions.R"))
+
 
 # run analyses ----
 info(logger, "1 - SUMMARISE CLINICAL TABLES")
