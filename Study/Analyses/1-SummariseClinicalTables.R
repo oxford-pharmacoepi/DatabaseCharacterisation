@@ -14,15 +14,12 @@ for (table in tables) {
     bind(summaryQuality(cdm[[table]]))
 }
 qualityChecks |>
-  suppress(minCellCount = minCellCount) |>
-  filter(!estimate_name %in% c("min","max")) |>
   write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_quality_checks.csv")))
 info(logger, "quality checks finished")
 
 # observation period ----
 info(logger, "observation period summary")
 overlapCounts(cdm$observation_period) |>
-  suppress(minCellCount = minCellCount) |>
   write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_observation_period.csv")))
 info(logger, "observation period summarised")
 
@@ -41,7 +38,6 @@ for (table in tables) {
     bind(incidenceCounts(cdm[[table]]))
 }
 incident |>
-  suppress(minCellCount = minCellCount) |>
   write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_incident_counts.csv")))
 info(logger, "incident counts done")
 
@@ -62,7 +58,6 @@ for (table in tables) {
 }
 
 conceptCounts |>
-  suppress(minCellCount = minCellCount) |>
   write_csv(file = here(resultsFolder, glue("{cdmName(cdm)}_concept_counts.csv")))
 info(logger, "concept counts done")
 

@@ -59,6 +59,19 @@ info(logger, "3 - INDIVIDUALS FOLLOWUP SUMMARISED")
 
 info(logger, "ANALYSES FINISHED")
 
+info(logger,"4 - PREPARE EXPORTED DATA")
+list_of_files <- list.files(path = here("Results", dbName),
+                            pattern = ".csv",
+                            full.names = TRUE)
+for(i in list_of_files){
+  as_tibble(read_csv(i)) |>
+    newSummarisedResult() |>
+    filter(!estimate_name %in% c("min","max")) |>
+    omopgenerics::suppress(minCellCount = minCellCount) |>
+    write_csv(file = here(resultsFolder, glue(gsub(".*/","",i))))
+}
+info(logger,"4 - EXPORTED DATA CREATED")
+
 # export results ----
 info(logger, "EXPORTING RESULTS")
 zip(
