@@ -23,7 +23,7 @@ cdm <- cdmFromCon(
 info(logger, "CDM OBJECT CREATED")
 
 if(sampleValue == TRUE){
-  cdm <- CDMConnector::sample(cdm, n = 10000)
+  cdm <- CDMConnector::cdm_sample(cdm, n = 10000)
 }
 
 # source functions
