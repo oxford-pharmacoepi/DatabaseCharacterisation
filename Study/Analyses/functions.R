@@ -105,7 +105,7 @@ summarisePersonDays  <- function(cdm,
   # results by sex
   if (bySex == TRUE) {
     cdm[[tmp1]] <- cdm[[tmp1]] |> 
-      addDemographics2(
+      addDemographics(
         age = FALSE, priorObservation = FALSE, futureObservation = FALSE
       )
     result <- result |>
@@ -635,7 +635,7 @@ summaryCodeCounts <- function(table, ageGroups) {
   }
   name <- omopgenerics::tableName(table)
   x <- table |>
-    addDemographics2(
+    addDemographics(
       indexDate = startDate(name), 
       ageGroup = ageGroups, 
       futureObservation = FALSE
@@ -771,7 +771,7 @@ summariseFollowUp <- function(cdm) {
     cdm = cdm, name = "denominator"
   )
   res <- cdm[["denominator"]] |>
-    addDemographics2(
+    addDemographics(
       priorObservation = FALSE, ageGroup = ageGroups
     ) |>
     dplyr::rename("age_group_at_entry" = "age_group") |>

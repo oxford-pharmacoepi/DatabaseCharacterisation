@@ -54,15 +54,30 @@ tables <- c(
   "observation", "death"
 )
 
-conceptCounts <- emptySummarisedResult()
+
+
 for (table in tables) {
   info(logger, paste0("concept counts for: ", table))
   conceptCounts <- conceptCounts |>
     bind(summaryCodeCounts(cdm[[table]], ageGroups))
 }
 
-conceptCounts |> 
+if(removeSpecialCharacters == TRUE){
+  names <- cdm[["concept"]] |>
+    select("variable_level" = "concept_id", "variable_name" = "concept_name") |>
+    mutate(variable_level = as.character(variable_level)) |>
+    collect()
+  
+  conceptCounts <- conceptCounts |>
+    select(-c("variable_name")) |>
+    inner_join(
+      names, by = "variable_level"
+    ) 
+}
+
+conceptCounts |>
   omopgenerics::exportSummarisedResult(fileName = glue("{cdmName(cdm)}_concept_counts.csv"), 
                                        path = here(resultsFolder))
+
 info(logger, "concept counts done")
 

@@ -34,3 +34,33 @@ selectors <- function(data, prefix, columns, multiple = TRUE, default = list()) 
     width = "200px"
   ))
 }
+
+bindestimates <- function(...) {
+  # initial checks
+  results <- list(...)
+  omopgenerics:::assertList(results, class = "summarised_result")
+  
+  settings <- lapply(results, omopgenerics::settings) |>
+    dplyr::bind_rows(.id = "list_id")
+  results <- results |>
+    dplyr::bind_rows(.id = "list_id")
+  
+  dic <- settings |>
+    dplyr::select("result_id", "list_id") |>
+    dplyr::distinct() |>
+    dplyr::mutate("new_result_id" = as.integer(dplyr::row_number()))
+  
+  settings <- settings |>
+    dplyr::inner_join(dic, by = c("result_id", "list_id")) |>
+    dplyr::select(-c("result_id", "list_id")) |>
+    dplyr::rename("result_id" = "new_result_id")
+  results <- results |>
+    dplyr::inner_join(dic, by = c("result_id", "list_id")) |>
+    dplyr::select(-c("result_id", "list_id")) |>
+    dplyr::rename("result_id" = "new_result_id")
+  
+  attr(results, "settings") <- settings
+  class(results) <- c("summarised_result", class(results))
+  
+  return(results)
+}

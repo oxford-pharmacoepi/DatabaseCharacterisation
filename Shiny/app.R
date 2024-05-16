@@ -1,4 +1,3 @@
-
 # renv::activate()
 # renv::restore()
 
@@ -128,7 +127,7 @@ ui <- dashboardPage(
           target = "_blank"
         ),
         h3("Database characterisation"),
-        h5("This is a visualisation for database characterisation."),
+        h4("This is a visualisation for database characterisation."),
         h5(
           "The code can be found at: ",
           a(
