@@ -34,7 +34,7 @@ for (k in seq_along(y)) {
   }
   unlink(folder)
 }
-usethis::edit_r_environ()
+
 x <- x[tools::file_ext(x) == "csv"]
 for (i in seq_along(x)) {
   results <- results |>
