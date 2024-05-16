@@ -159,7 +159,7 @@ ui <- dashboardPage(
       ### cdm snapshot ----
       tabItem(
         tabName = "database_snapshot",
-        h5("Metadata of each database"),
+        h4("Metadata of each database"),
         selectors(
           data = snapshot, 
           prefix = "db", 
@@ -183,7 +183,7 @@ ui <- dashboardPage(
       ### overall summary ----
       tabItem(
         tabName = "overall_summary",
-        h5("Overall summary"),
+        h4("Overall summary"),
         selectors(
           data = overallSummary, 
           prefix = "os", 
@@ -207,7 +207,7 @@ ui <- dashboardPage(
       ### concept counts ----
       tabItem(
         tabName = "concept_counts",
-        h5("Concept counts"),
+        h4("Concept counts"),
         selectors(
           data = conceptCounts, 
           prefix = "cc", 
@@ -232,7 +232,7 @@ ui <- dashboardPage(
       ### characteristics at entry ----
       tabItem(
         tabName = "characteristics_entry",
-        h5("Characteristics at entry"),
+        h4("Characteristics at entry"),
         selectors(
           data = characteristicsAtEntry, 
           prefix = "ce", 
@@ -256,7 +256,7 @@ ui <- dashboardPage(
       ### characteristics year ----
       tabItem(
         tabName = "characteristics_year",
-        h5("Characteristics of individuals in observation at a certain year"),
+        h4("Characteristics of individuals in observation at a certain year"),
         selectors(
           data = characteristicsYear, 
           prefix = "cy", 
@@ -280,7 +280,7 @@ ui <- dashboardPage(
       ### summary followup ----
       tabItem(
         tabName = "overall_followup",
-        h5("Histogram of follow-up"),
+        h4("Histogram of follow-up"),
         selectors(
           data = summaryFollowup, 
           prefix = "fu", 
@@ -309,7 +309,7 @@ ui <- dashboardPage(
       ### summary person-days ----
       tabItem(
         tabName = "person_days",
-        h5("Person days"),
+        h4("Person days"),
         selectors(
           data = summaryPersonDays, 
           prefix = "pd", 
@@ -362,7 +362,7 @@ ui <- dashboardPage(
       ### incident counts trend ----
       tabItem(
         tabName = "incident_counts_trends",
-        h5("Counts per table"),
+        h4("Counts per table"),
         selectors(
           data = incidentCounts, 
           prefix = "ic", 
@@ -396,7 +396,7 @@ ui <- dashboardPage(
       ### incident counts trend ----
       tabItem(
         tabName = "individuals_observation",
-        h5("Individuals in observation"),
+        h4("Individuals in observation"),
         selectors(
           data = opResult, 
           prefix = "op", 
@@ -485,7 +485,7 @@ server <- function(input, output) {
   )
   getOsFormatted <- reactive({
     overallSummary |>
-      filterData("os", input) |>
+      # filterData("os", input) |>
       formatEstimateValue() |>
       formatEstimateName(
         estimateNameFormat = c(
@@ -503,7 +503,7 @@ server <- function(input, output) {
         "Estimate" = "estimate_name"
       ) |>
       gtTable(
-        groupNameCol = c("omop_table"), 
+        groupColumn = "omop_table",
         colsToMergeRows = c("Variable", "Level")
       )
       

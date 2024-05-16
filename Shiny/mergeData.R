@@ -16,7 +16,8 @@ for (k in seq_along(y)) {
   for (i in seq_along(files)) {
     results <- results |>
       bind(
-        read_csv(files[i], show_col_types = FALSE, col_types = cols(.default = "c")) |> newSummarisedResult()
+        read_csv(files[i], show_col_types = FALSE, col_types = cols(.default = "c")) |> 
+          newSummarisedResult()
       )
   }
   unlink(folder)
