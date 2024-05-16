@@ -224,7 +224,7 @@ summaryQuality <- function(table) {
     x <- table |> mutate(in_observation = 1)
   } else {
     x <- table |>
-      addInObservation(indexDate = start)
+      addInObservation2(indexDate = start)
   }
   if (!is.null(concept)) {
     x <- x |>
@@ -819,31 +819,35 @@ summariseFollowUp <- function(cdm) {
     omopgenerics::newSummarisedResult()
   return(result)
 }
-# addInObservation2 <- function(x, indexDate, nameStyle = "in_observation") {
-#   cdm <- omopgenerics::cdmReference(x)
-#   id <- c("person_id", "subject_id")
-#   id <- id[id %in% colnames(x)]
-#   x |>
-#     dplyr::left_join(
-#       x |>
-#         dplyr::select(dplyr::all_of(c(id, "date" = indexDate))) |>
-#         dplyr::inner_join(
-#           cdm$observation_period |>
-#             dplyr::select(
-#               !!id := "person_id", 
-#               "start" = "observation_period_start_date",
-#               "end" = "observation_period_end_date"
-#             ),
-#           by = id
-#         ) |>
-#         dplyr::filter(.data$date >= .data$start & .data$date <= .data$end) |>
-#         dplyr::mutate(!!nameStyle := 1),
-#       by = "person_id"
-#     ) |>
-#     dplyr::mutate(!!nameStyle := dplyr::if_else(
-#       is.na(.data[[nameStyle]]), 0, 1
-#     ))
-# }
+addInObservation2 <- function(x, indexDate, nameStyle = "in_observation") {
+  cdm <- omopgenerics::cdmReference(x)
+  id <- c("person_id", "subject_id")
+  id <- id[id %in% colnames(x)]
+  x |>
+    dplyr::left_join(
+      x |>
+        dplyr::select(dplyr::all_of(c(id, indexDate))) |>
+        dplyr::distinct() |>
+        dplyr::inner_join(
+          cdm$observation_period |>
+            dplyr::select(
+              !!id := "person_id",
+              "start" = "observation_period_start_date",
+              "end" = "observation_period_end_date"
+            ),
+          by = id
+        ) |>
+        dplyr::filter(
+          .data[[indexDate]] >= .data$start & .data[[indexDate]] <= .data$end
+        ) |>
+        dplyr::mutate(!!nameStyle := 1) |>
+        dplyr::select(-"start", -"end"),
+      by = c(id, indexDate)
+    ) |>
+    dplyr::mutate(!!nameStyle := dplyr::if_else(
+      is.na(.data[[nameStyle]]), 0, 1
+    ))
+}
 filterInObservation <- function(x, indexDate) {
   cdm <- omopgenerics::cdmReference(x)
   id <- c("person_id", "subject_id")
