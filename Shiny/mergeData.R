@@ -5,9 +5,12 @@ library(readr)
 library(dplyr)
 library(tidyr)
 library(visOmopResults)
+library(stringr)
+source(here("functions.R"))
 
 x <- list.files(here("data"))
 y <- x[tools::file_ext(x) == "zip"]
+
 results <- emptySummarisedResult()
 for (k in seq_along(y)) {
   folder <- tempdir()
@@ -15,14 +18,23 @@ for (k in seq_along(y)) {
   files <- files[tools::file_ext(files) == "csv"]
   for (i in seq_along(files)) {
     results <- results |>
-      bind(
+      bindestimates(
         read_csv(files[i], show_col_types = FALSE, col_types = cols(.default = "c")) |> 
+          filter(!(variable_name == "number_subjects" & estimate_name == "percentage")) |>
+          mutate(variable_name = str_replace_all(variable_name, "\\+\\\xa6","o")) |>
+          mutate(variable_name = str_replace_all(variable_name, "\\+\\\xba","s")) |>
+          mutate(variable_name = str_replace_all(variable_name, "\\+\\\xac","e")) |>
+          mutate(variable_name = str_replace_all(variable_name, "\\+\\+","u")) |>
+          mutate(variable_name = str_replace_all(variable_name, "\\+\\\xbf","e")) |>
+          mutate(variable_name = str_replace_all(variable_name, "\\+\\\xe1","a")) |>
+          mutate(variable_name = str_replace_all(variable_name, "\\+\\+m","um")) |>
+          mutate(variable_name = str_replace_all(variable_name, "\\+\\+ll","ull")) |>
           newSummarisedResult()
       )
   }
   unlink(folder)
 }
-
+usethis::edit_r_environ()
 x <- x[tools::file_ext(x) == "csv"]
 for (i in seq_along(x)) {
   results <- results |>
