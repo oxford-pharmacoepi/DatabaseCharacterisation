@@ -485,7 +485,7 @@ server <- function(input, output) {
   )
   getOsFormatted <- reactive({
     overallSummary |>
-      # filterData("os", input) |>
+      filterData("os", input) |>
       formatEstimateValue() |>
       formatEstimateName(
         estimateNameFormat = c(
