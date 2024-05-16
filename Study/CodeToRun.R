@@ -35,6 +35,7 @@ writeSchema <- c(schema = "...", prefix = "...")
 # minimum counts that can be displayed according to data governance
 minCellCount <- "..."
 
+# Set sampleValue as TRUE if you would like to run it in a 10K sample. Otherwise, set it to FALSE
 sampleValue <- "..." # TRUE OR FALSE 
 
 # Run the study
