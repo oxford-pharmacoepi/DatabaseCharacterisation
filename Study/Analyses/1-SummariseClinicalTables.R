@@ -61,6 +61,7 @@ for (table in tables) {
     bind(summaryCodeCounts(cdm[[table]], ageGroups))
 }
 
+removeSpecialCharacters <- FALSE
 if(removeSpecialCharacters == TRUE){
   names <- cdm[["concept"]] |>
     select("variable_level" = "concept_id", "variable_name" = "concept_name") |>
