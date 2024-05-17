@@ -54,8 +54,7 @@ tables <- c(
   "observation", "death"
 )
 
-
-
+conceptCounts <- emptySummarisedResult()
 for (table in tables) {
   info(logger, paste0("concept counts for: ", table))
   conceptCounts <- conceptCounts |>
