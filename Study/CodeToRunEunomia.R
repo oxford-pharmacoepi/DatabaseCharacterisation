@@ -17,6 +17,9 @@ library(IncidencePrevalence)
 library(omopgenerics)
 library(CohortCharacteristics)
 library(testthat)
+library(stringr)
+library(backports)
+library(snakecase)
 
 # database metadata and connection details
 # The name/ acronym for the database
@@ -44,9 +47,13 @@ cdmSchema <- "main"
 writeSchema <- c(schema = "main", prefix = "mc_")
 
 # minimum counts that can be displayed according to data governance
-minCellCount <- 8
+minCellCount <- "8"
 
-sampleValue <- FALSE # TRUE OR FALSE
+sampleValue <- "FALSE" # TRUE OR FALSE
+
+# Set removeSpecialCharacters as TRUE if you would like to replace the special characters in the concept tamble
+replaceSpecialCharacters <- "TRUE" # TRUE OR FALSE
+
 # Run the study
 source(here("RunStudy.R"))
 

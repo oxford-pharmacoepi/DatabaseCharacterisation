@@ -440,10 +440,12 @@ server <- function(input, output) {
       pivot_wider(
         names_from = c("variable_name", "estimate_name"), 
         values_from = "estimate_value"
-      )
+      ) |>
+      mutate_at(.vars = c("person_count_count", "observation_period_count_count"), as.numeric) |>
+      mutate(across(where(is.numeric), separator)) 
   })
   output$snapshot_tidy <- renderDataTable({
-    datatable(getSnapshot(), options = list(scrollX = TRUE))
+    datatable(getSnapshot(), options = list(scrollX = TRUE)) 
   })
   output$snapshot_tidy_download <- downloadHandler(
     filename = "cdm_snapshot.csv",
@@ -470,11 +472,14 @@ server <- function(input, output) {
   ## omop table ----
   getOsTidy <- reactive({
     overallSummary |>
-      filterData("os", input)
+      filterData("os", input) |>
+      mutate(across(where(is.numeric), separator))
   })
   output$os_tidy <- renderDataTable({
     getOsTidy() |>
-      datatable()
+      datatable() |>
+      formatRound(columns = c('estimate_value'), digits=2) |>
+      formatCurrency(7,' ')
   })
   output$os_tidy_download  <- downloadHandler(
     filename = "omop_table_summary.csv",
@@ -522,7 +527,8 @@ server <- function(input, output) {
       filterData("ic", input) |>
       mutate(estimate_value = as.numeric(estimate_value)) |>
       select("omop_table", "strata_name", "strata_level", "variable_name", "cdm_name", "estimate_value") |>
-      pivot_wider(names_from = cdm_name, values_from = estimate_value)
+      pivot_wider(names_from = cdm_name, values_from = estimate_value) |>
+      mutate(across(where(is.numeric), separator))
   })
   output$ic_tidy <- renderDataTable({
     datatable(getIcTidy(), options = list(scrollX = TRUE))
@@ -574,7 +580,8 @@ server <- function(input, output) {
       mutate(estimate_value = as.numeric(estimate_value)) |> 
       select("omop_table", "sex", "age_group", "year", "concept_name" = "variable_name",
              "concept_id" = "variable_level", "cdm_name", "estimate_value") |>
-      pivot_wider(names_from = cdm_name, values_from = estimate_value)
+      pivot_wider(names_from = cdm_name, values_from = estimate_value) |>
+      mutate(across(where(is.numeric), separator))
   })
   output$cc_tidy <- renderDataTable({
     datatable(getCcTidy(), options = list(scrollX = TRUE))
@@ -611,9 +618,25 @@ server <- function(input, output) {
   #
   ## characteristics entry tidy ----
   getCeTidy <- reactive({
-    characteristicsAtEntry |>
+    x <- characteristicsAtEntry |>
       filterData("ce", input) |>
       select(-starts_with(c("result", "package", "group", "strata", "additional")))
+    
+    x |> filter(estimate_type %in% c("integer","numeric")) |>
+      mutate(estimate_value = as.numeric(estimate_value)) |>
+      mutate(estimate_value = round(estimate_value,2)) |>
+      mutate(estimate_value = as.numeric(estimate_value)) |>
+      mutate(estimate_value = format(as.numeric(estimate_value), big.mark = ",", decimal.mark = ".")) |>
+      full_join(
+        x |> filter(!(estimate_type %in% c("integer","numeric","percentage")))
+      ) |>
+      full_join(
+        x |> filter((estimate_type %in% c("percentage"))) |>
+          mutate(estimate_value = as.numeric(estimate_value)) |>
+          mutate(estimate_value = round(estimate_value,2)) |>
+          mutate(estimate_value = as.numeric(estimate_value)) |>
+          mutate(estimate_value = format(as.numeric(estimate_value), big.mark = ",", decimal.mark = ".")) 
+      )
   })
   output$ce_tidy <- renderDataTable({
     getCeTidy()
@@ -642,10 +665,26 @@ server <- function(input, output) {
   )
   ## characteristics year tidy ----
   getCyTidy <- reactive({
-    characteristicsYear |>
+    x <- characteristicsYear |>
       filterData("ye", input) |>
       splitStrata() |>
       select(-starts_with(c("result", "package", "group", "additional")))
+    
+    x |> filter(estimate_type %in% c("integer","numeric")) |>
+      mutate(estimate_value = as.numeric(estimate_value)) |>
+      mutate(estimate_value = round(estimate_value,2)) |>
+      mutate(estimate_value = as.numeric(estimate_value)) |>
+      mutate(estimate_value = format(as.numeric(estimate_value), big.mark = ",", decimal.mark = ".")) |>
+      full_join(
+        x |> filter(!(estimate_type %in% c("integer","numeric","percentage")))
+      ) |>
+      full_join(
+        x |> filter((estimate_type %in% c("percentage"))) |>
+          mutate(estimate_value = as.numeric(estimate_value)) |>
+          mutate(estimate_value = round(estimate_value,2)) |>
+          mutate(estimate_value = as.numeric(estimate_value)) |>
+          mutate(estimate_value = format(as.numeric(estimate_value), big.mark = ",", decimal.mark = ".")) 
+      )
   })
   output$cy_tidy <- renderDataTable({
     getCyTidy()
@@ -675,10 +714,12 @@ server <- function(input, output) {
   ## individuals followup tidy ----
   getFuTidy <- reactive({
     summaryFollowup |>
-      filterData("fu", input)
+      filterData("fu", input) |>
+      mutate(estimate_value = as.numeric(estimate_value)) |>
+      mutate(across(where(is.numeric), separator))
   })
   output$fu_tidy <- renderDataTable({
-    getFuTidy()
+    getFuTidy() 
   })
   output$fu_tidy_download <- downloadHandler(
     filename = "followup_histogram.csv",
@@ -694,7 +735,7 @@ server <- function(input, output) {
       formatEstimateValue() |>
       formatHeader(header = c("cdm_name", "sex", "age_group_at_entry")) |>
       select(-"estimate_type", -"estimate_name") |>
-      gtTable(colsToMergeRows = c("variable_name"), na = "<5")
+      gtTable(colsToMergeRows = c("variable_name"), na = "<8")
   })
   output$fu_formatted <- render_gt(getFuFormatted())
   output$fu_formatted_download <- downloadHandler(
@@ -721,7 +762,9 @@ server <- function(input, output) {
   })
   ## person days tidy ----
   getPdTidy <- reactive({
-    summaryPersonDays |> filterData("pd", input)
+    summaryPersonDays |> filterData("pd", input) |>
+      mutate(estimate_value = as.numeric(estimate_value)) |>
+      mutate(across(where(is.numeric), separator))
   })
   output$pd_tidy <- renderDataTable(getPdTidy())
   output$pd_tidy_download <- downloadHandler(
@@ -793,7 +836,8 @@ server <- function(input, output) {
   getOpTidy <- reactive({
     opResult |>
       filterData("op", input) |>
-      mutate(estimate_value = as.numeric(estimate_value))
+      mutate(estimate_value = as.numeric(estimate_value)) |>
+      mutate(across(where(is.numeric), separator))
   })
   output$op_tidy <- renderDataTable({
     getOpTidy() 

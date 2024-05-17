@@ -64,3 +64,7 @@ bindestimates <- function(...) {
   
   return(results)
 }
+
+separator <- function(x){
+ format(as.numeric(x), big.mark = ",", decimal.mark = ".")
+}
