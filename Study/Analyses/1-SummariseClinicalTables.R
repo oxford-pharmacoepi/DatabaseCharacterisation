@@ -1,4 +1,3 @@
-
 # quality checks ----
 info(logger, "start quality checks")
 tables <- c(
@@ -54,6 +53,35 @@ tables <- c(
   "observation", "death"
 )
 
+if(replaceSpecialCharacters == TRUE){
+  concept_names <- cdm[["concept"]] |>
+    select("concept_name", "concept_id") |>
+    distinct() |>
+    collect() |>
+    mutate(concept_name = iconv(concept_name, to = "UTF-8", sub = ".")) |>
+    mutate(concept_name = if_else(row_number() == 1, "M\\+.ni\\+.re's", concept_name)) |>
+    filter(grepl("\\+.",concept_name)) |>
+    mutate(concept_name = gsub("M\\+.ni\\+.re's","Meniere's",concept_name),
+           concept_name = gsub("Sj\\+.gren","Sjogren's", concept_name),
+           concept_name = gsub("Boutonni\\+.re","Boutonnier", concept_name),
+           concept_name = gsub("Ch\\+.diak","Chediak", concept_name),
+           concept_name = gsub("Cura\\+.ao", "Curasao", concept_name),
+           concept_name = gsub("Cr\\+.ole","Creole", concept_name),
+           concept_name = gsub("D\\+.j\\+.", "Deja", concept_name),
+           concept_name = gsub("Sch+.nlein", "Schonlein", concept_name),
+           concept_name = gsub("S\\+.quard", "Sequard", concept_name),
+           concept_name = gsub("Waldenstr\\+.m", "Waldenstrom", concept_name),
+           concept_name = gsub("Caf\\+.","Cafe", concept_name)) 
+  
+  cdm[["concept"]] <- cdm[["concept"]] |>
+    mutate(concept_name = if_else(
+      concept_id %in% concept_names$concept_id,
+      paste0("concept_",as.character(concept_id)),
+      concept_name)
+    ) |>
+    compute()
+}
+
 conceptCounts <- emptySummarisedResult()
 for (table in tables) {
   info(logger, paste0("concept counts for: ", table))
@@ -61,17 +89,23 @@ for (table in tables) {
     bind(summaryCodeCounts(cdm[[table]], ageGroups))
 }
 
-if(removeSpecialCharacters == TRUE){
-  names <- cdm[["concept"]] |>
-    select("variable_level" = "concept_id", "variable_name" = "concept_name") |>
-    mutate(variable_level = as.character(variable_level)) |>
-    collect()
-  
-  conceptCounts <- conceptCounts |>
+if(replaceSpecialCharacters == TRUE){
+conceptCounts <- conceptCounts |>
+    filter(grepl("concept_", variable_name)) |>
     select(-c("variable_name")) |>
     inner_join(
-      names, by = "variable_level"
-    ) 
+      concept_names |> 
+        rename(variable_name = concept_name, variable_level = concept_id) |>
+        mutate(variable_level = as.character(variable_level)),
+      by = "variable_level"
+    )  |>
+    full_join(
+      conceptCounts |>
+        filter(!grepl("concept_", variable_name)),
+      by = c("result_id", "cdm_name", "group_name", "group_level","strata_name",
+             "strata_level", "variable_level", "estimate_name","estimate_type",
+             "estimate_value","additional_name", "additional_level", "variable_name")
+    )
 }
 
 conceptCounts |>

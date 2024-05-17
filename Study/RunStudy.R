@@ -67,8 +67,6 @@ cdm |>
   )
 info(logger, "SNAPHSOT EXPORTED")
 
-
-
 # run analyses ----
 info(logger, "1 - SUMMARISE CLINICAL TABLES")
 source(here("Analyses", "1-SummariseClinicalTables.R"))
@@ -92,7 +90,7 @@ for(i in list_of_files){
   as_tibble(read_csv(i, col_types = cols(.default = "c"))) |>
     newSummarisedResult() |>
     filter(!estimate_name %in% c("min","max")) |>
-    omopgenerics::suppress(minCellCount = minCellCount) |>
+    omopgenerics::suppress(minCellCount = as.numeric(minCellCount)) |>
     exportSummarisedResult(
       fileName = glue(gsub(".*/","",i)),
       path = here(resultsFolder)
