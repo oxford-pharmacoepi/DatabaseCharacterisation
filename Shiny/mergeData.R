@@ -102,7 +102,7 @@ summaryPersonDays <- results |>
     sex = factor(sex, levels = c("overall", "Female", "Male")),
     year = factor(year, levels = c("overall", as.character(1900:2050)))
   ) |>
-  arrange(age_group, sex, year)
+  arrange(age_group, sex, year) 
 
 save(
   snapshot, overallSummary, incidentCounts, conceptCounts, opResult, 
