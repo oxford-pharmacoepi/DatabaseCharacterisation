@@ -90,7 +90,7 @@ for (table in tables) {
 }
 
 if(replaceSpecialCharacters == TRUE){
-conceptCounts <- conceptCounts |>
+  conceptCounts <- conceptCounts |>
     filter(grepl("concept_", variable_name)) |>
     select(-c("variable_name")) |>
     inner_join(
