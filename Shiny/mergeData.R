@@ -21,20 +21,24 @@ for (k in seq_along(y)) {
       bindestimates(
         read_csv(files[i], show_col_types = FALSE, col_types = cols(.default = "c")) |> 
           filter(!(variable_name == "number_subjects" & estimate_name == "percentage")) |>
-          mutate(variable_name = str_replace_all(variable_name, "\\+\\\xa6","o")) |>
-          mutate(variable_name = str_replace_all(variable_name, "\\+\\\xba","s")) |>
-          mutate(variable_name = str_replace_all(variable_name, "\\+\\\xac","e")) |>
-          mutate(variable_name = str_replace_all(variable_name, "\\+\\+","u")) |>
-          mutate(variable_name = str_replace_all(variable_name, "\\+\\\xbf","e")) |>
-          mutate(variable_name = str_replace_all(variable_name, "\\+\\\xe1","a")) |>
-          mutate(variable_name = str_replace_all(variable_name, "\\+\\+m","um")) |>
-          mutate(variable_name = str_replace_all(variable_name, "\\+\\+ll","ull")) |>
+          mutate(variable_name = iconv(variable_name, to = "UTF-8", sub = ".")) |>
+          mutate(variable_name = gsub("M\\+.ni\\+.re's","Meniere's",variable_name),
+                 variable_name = gsub("Sj\\+.gren","Sjogren's", variable_name),
+                 variable_name = gsub("Boutonni\\+.re","Boutonnier", variable_name),
+                 variable_name = gsub("Ch\\+.diak","Chediak", variable_name),
+                 variable_name = gsub("Cura\\+.ao", "Curasao", variable_name),
+                 variable_name = gsub("Cr\\+.ole","Creole", variable_name),
+                 variable_name = gsub("D\\+.j\\+.", "Deja", variable_name),
+                 variable_name = gsub("Sch+.nlein", "Schonlein", variable_name),
+                 variable_name = gsub("S\\+.quard", "Sequard", variable_name),
+                 variable_name = gsub("Waldenstr\\+.m", "Waldenstrom", variable_name),
+                 variable_name = gsub("Caf\\+.","Cafe", variable_name)) |>
           newSummarisedResult()
       )
   }
   unlink(folder)
 }
-usethis::edit_r_environ()
+
 x <- x[tools::file_ext(x) == "csv"]
 for (i in seq_along(x)) {
   results <- results |>
