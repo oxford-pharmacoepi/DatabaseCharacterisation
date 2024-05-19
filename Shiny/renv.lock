@@ -1370,9 +1370,9 @@
     },
     "omopgenerics": {
       "Package": "omopgenerics",
-      "Version": "0.2.0",
+      "Version": "0.2.1",
       "Source": "Repository",
-      "Repository": "RSPM",
+      "Repository": "CRAN",
       "Requirements": [
         "R",
         "cli",
@@ -1385,7 +1385,7 @@
         "stringr",
         "tidyr"
       ],
-      "Hash": "1e2514e8721244b05417933a2f9babd4"
+      "Hash": "b696a8bc173331b645f23d098a4baafd"
     },
     "openssl": {
       "Package": "openssl",

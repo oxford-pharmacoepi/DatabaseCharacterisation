@@ -1,5 +1,5 @@
 # renv::activate()
-# renv::restore()
+# renv::restore() 
 
 library(shiny)
 library(shinydashboard)
@@ -651,7 +651,7 @@ server <- function(input, output) {
   ## characteristics entry gt ----
   output$ce_formatted <- render_gt({
     characteristicsAtEntry |>
-      filterData("ce", input) |>
+      # filterData("ce", input) |>
       CohortCharacteristics::tableCharacteristics(header = "cdm_name")
   })
   output$ce_formatted_download <- downloadHandler(
@@ -756,6 +756,7 @@ server <- function(input, output) {
       ggplot(aes(x = followup_years, y = number_individuals)) +
       geom_bar(stat = "identity") + 
       facet_grid(sex + age_group_at_entry ~ cdm_name)
+      
   })
   output$fu_plot <- renderPlot({
     getFuPlot()
