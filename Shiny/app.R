@@ -456,7 +456,7 @@ server <- function(input, output) {
 
   getGtSnapshot <- reactive({
     snapshot |>
-      # filterData(prefix = "db", input) |>
+      filterData(prefix = "db", input) |>
       mutate(
         estimate_value = if_else(variable_name %in% c("person_count", "observation_period_count"), format(as.numeric(estimate_value), big.mark = ","),
                                  estimate_value)) |>
