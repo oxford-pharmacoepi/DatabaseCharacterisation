@@ -452,13 +452,17 @@ server <- function(input, output) {
     content = function(file) {
       getSnapshot() %>% write_csv(file = file)
     }
-  )
+  ) 
+
   getGtSnapshot <- reactive({
     snapshot |>
-      filterData(prefix = "db", input) |>
+      # filterData(prefix = "db", input) |>
+      mutate(
+        estimate_value = if_else(variable_name %in% c("person_count", "observation_period_count"), format(as.numeric(estimate_value), big.mark = ","),
+                                 estimate_value)) |>
       formatHeader(header = "cdm_name") |>
       rename("Variable" = "variable_name", "Estimate" = "estimate_name") |>
-      gtTable()
+      gtTable() 
   })
   output$snapshot_formatted <- render_gt({
     getGtSnapshot()
