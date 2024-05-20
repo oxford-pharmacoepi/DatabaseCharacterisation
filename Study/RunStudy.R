@@ -36,7 +36,7 @@ for(table in names(cdm)){
              "device_concept_id", "measurement_concept_id",  "observation_concept_id",
              "cause_concept_id")
   if(TRUE %in% (colnames(cdm[[table]]) %in% names)){
-    cdm[[table]] |>
+   cdm[[table]] <- cdm[[table]] |>
       rename("concept_id" = !!standardConcept(table)) |>
       mutate(concept_id = if_else(is.na(concept_id), 0L, as.integer(concept_id))) |>
       rename(!!standardConcept(table) := "concept_id")
