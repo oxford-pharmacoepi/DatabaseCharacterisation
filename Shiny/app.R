@@ -494,6 +494,16 @@ server <- function(input, output) {
   getOsFormatted <- reactive({
     overallSummary |>
       filterData("os", input) |>
+      mutate(order = case_when(
+        variable_name == "number_records" ~ 1,
+        variable_name == "number_subjects" ~ 2,
+        variable_name == "records_per_person" ~ 3,
+        variable_name == "In observation" ~ 4,
+        variable_name == "Mapped" ~ 5,
+        variable_name == "Record type" ~ 6,
+        variable_name == "Domain" ~ 7,
+      )) |>
+      arrange(order) |>
       formatEstimateValue() |>
       formatEstimateName(
         estimateNameFormat = c(
