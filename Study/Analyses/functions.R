@@ -527,6 +527,7 @@ overlapCounts <- function(table) {
   start_date <- startDate(name)
   end_date <- endDate(name)
   table <- table |>
+    dplyr::mutate(!!start_date := as.Date(.data[[start_date]])) |>
     dplyr::select(dplyr::all_of(c(start_date, end_date)), "person_id") |>
     dplyr::filter(!is.na(.data[[end_date]]))
   minYear <- table |>
