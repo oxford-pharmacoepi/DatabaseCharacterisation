@@ -75,7 +75,7 @@ if(replaceSpecialCharacters == TRUE){
   
   cdm[["concept"]] <- cdm[["concept"]] |>
     mutate(concept_name = if_else(
-      concept_id %in% concept_names$concept_id,
+      concept_id %in% !!concept_names$concept_id,
       paste0("concept_",as.character(concept_id)),
       concept_name)
     ) |>
